@@ -1,0 +1,16 @@
+employee_id,email,display_name,region,country,role,department,is_manager
+EMP-001,stephen.gingell@keller.com,Stephen Gingell,NorthEurope,United Kingdom,BI Team Lead,IT,true
+EMP-002,sarah.chen@keller.com,Sarah Chen,APAC,Australia,Regional BI Manager,IT,true
+EMP-003,markus.weber@keller.com,Markus Weber,WestEurope,Germany,Regional BI Manager,IT,true
+EMP-004,james.martinez@keller.com,James Martinez,NorthAmerica,United States,Regional BI Manager,IT,true
+EMP-005,ahmed.hassan@keller.com,Ahmed Hassan,MiddleEast,UAE,Regional BI Manager,IT,true
+EMP-006,emma.wilson@keller.com,Emma Wilson,NorthEurope,United Kingdom,BI Developer,IT,false
+EMP-007,tom.mueller@keller.com,Tom Mueller,WestEurope,Germany,BI Developer,IT,false
+EMP-008,priya.sharma@keller.com,Priya Sharma,APAC,India,BI Developer,IT,false
+EMP-009,michael.johnson@keller.com,Michael Johnson,NorthAmerica,United States,BI Developer,IT,false
+EMP-010,fatima.al-rashid@keller.com,Fatima Al-Rashid,MiddleEast,Saudi Arabia,BI Developer,IT,false
+EMP-011,david.brown@keller.com,David Brown,NorthEurope,United Kingdom,Data Engineer,IT,false
+EMP-012,anna.kowalski@keller.com,Anna Kowalski,WestEurope,Poland,Data Engineer,IT,false
+EMP-013,robert.taylor@keller.com,Robert Taylor,NorthEurope,United Kingdom,Finance Director,Finance,true
+EMP-014,lisa.schmidt@keller.com,Lisa Schmidt,WestEurope,Germany,Finance Manager,Finance,true
+EMP-015,daniel.wong@keller.com,Daniel Wong,APAC,Singapore,Finance Manager,Finance,true

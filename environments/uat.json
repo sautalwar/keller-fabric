@@ -1,0 +1,8 @@
+{
+    "environment": "UAT",
+    "workspace": "WS_Keller_UAT",
+    "lakehouse": "UAT_Lakehouse",
+    "warehouse": "UAT_Warehouse",
+    "sql_endpoint": "uat-sql.fabric.microsoft.com",
+    "notes": "User Acceptance Testing — business users validate here before Prod."
+}

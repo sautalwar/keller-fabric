@@ -1,0 +1,36 @@
+{
+    "dataflow_name": "df_project_costs",
+    "description": "Reads project cost data from Excel files, cleans it, writes to Lakehouse table",
+    "parameters": [
+        {
+            "name": "pLakehouseName",
+            "type": "Text",
+            "default": "Dev_Lakehouse",
+            "required": true,
+            "public": true,
+            "purpose": "Target Lakehouse — swapped per environment via deployment rules"
+        },
+        {
+            "name": "pSourceTable",
+            "type": "Text",
+            "default": "raw_project_costs",
+            "required": true,
+            "public": true,
+            "purpose": "Source table name to read from"
+        },
+        {
+            "name": "pFilterRegion",
+            "type": "Text",
+            "default": "ALL",
+            "required": false,
+            "public": true,
+            "purpose": "Filter by region — 'ALL' for no filter, or 'EMEA', 'APAC', etc."
+        }
+    ],
+    "public_parameters_enabled": true,
+    "notes": [
+        "public_parameters_enabled = true is CRITICAL.",
+        "Without it, deployment pipelines CANNOT see or override these parameters.",
+        "To enable: Home → Options → Parameters → Check 'Enable parameters to be discovered and overridden'"
+    ]
+}

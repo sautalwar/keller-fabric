@@ -1,0 +1,35 @@
+{
+    "pipeline_name": "Keller BI Deployment Pipeline",
+    "type": "Classic (GA)",
+    "stages": [
+        {
+            "stage": 1,
+            "name": "Development",
+            "workspace": "WS_Keller_Dev",
+            "purpose": "Developers build and test new dataflows, reports, models here."
+        },
+        {
+            "stage": 2,
+            "name": "UAT",
+            "workspace": "WS_Keller_UAT",
+            "purpose": "Business users validate changes before production."
+        },
+        {
+            "stage": 3,
+            "name": "Production",
+            "workspace": "WS_Keller_Prod",
+            "purpose": "Live environment — serves real users and dashboards."
+        }
+    ],
+    "items_deployed": [
+        "df_project_costs (Dataflow Gen2)",
+        "sm_project_costs (Semantic Model)",
+        "rpt_project_overview (Report)"
+    ],
+    "notes": [
+        "Each stage is linked to ONE workspace.",
+        "A workspace can only be in ONE pipeline at a time.",
+        "Deploy from Stage 1 → 2 → 3 in sequence.",
+        "Rules are configured PER target stage."
+    ]
+}

@@ -1,0 +1,72 @@
+{
+    "pipeline_name": "Keller BI Deployment Pipeline",
+    "description": "These rules automatically swap values when deploying between stages.",
+
+    "rules_for_uat_stage": {
+        "stage": "UAT",
+        "item": "df_project_costs (Dataflow Gen2)",
+        "data_source_rules": [
+            {
+                "description": "Swap the Lakehouse destination from Dev to UAT",
+                "source_item": "Dev_Lakehouse",
+                "target_item": "UAT_Lakehouse",
+                "how": "In pipeline UI → Gear icon on UAT stage → Deployment rules → Data source rules"
+            }
+        ],
+        "parameter_rules": [
+            {
+                "parameter": "pLakehouseName",
+                "dev_value": "Dev_Lakehouse",
+                "rule_override": "UAT_Lakehouse",
+                "how": "In pipeline UI → Gear icon → Deployment rules → Parameter rules"
+            },
+            {
+                "parameter": "pFilterRegion",
+                "dev_value": "ALL",
+                "rule_override": "EMEA",
+                "why": "UAT only tests with EMEA data to keep refreshes fast"
+            },
+            {
+                "parameter": "pSourceTable",
+                "dev_value": "raw_project_costs",
+                "rule_override": "raw_project_costs",
+                "why": "Same table name in UAT — no override needed, but shown for completeness"
+            }
+        ]
+    },
+
+    "rules_for_prod_stage": {
+        "stage": "Production",
+        "item": "df_project_costs (Dataflow Gen2)",
+        "data_source_rules": [
+            {
+                "description": "Swap the Lakehouse destination from UAT to Prod",
+                "source_item": "UAT_Lakehouse",
+                "target_item": "Prod_Lakehouse"
+            }
+        ],
+        "parameter_rules": [
+            {
+                "parameter": "pLakehouseName",
+                "uat_value": "UAT_Lakehouse",
+                "rule_override": "Prod_Lakehouse"
+            },
+            {
+                "parameter": "pFilterRegion",
+                "uat_value": "EMEA",
+                "rule_override": "ALL",
+                "why": "Prod needs ALL regions — full dataset"
+            }
+        ]
+    },
+
+    "what_happens_when_you_deploy": {
+        "step_1": "You click 'Deploy' from Dev → UAT",
+        "step_2": "The pipeline copies the Dataflow Gen2 definition to the UAT workspace",
+        "step_3": "Data source rules automatically swap Dev_Lakehouse → UAT_Lakehouse",
+        "step_4": "Parameter rules automatically set pLakehouseName='UAT_Lakehouse', pFilterRegion='EMEA'",
+        "step_5": "The dataflow in UAT now points to the correct UAT resources — no manual edits!",
+        "step_6": "You trigger a refresh in UAT to load data, then validate with business users",
+        "step_7": "When approved, deploy UAT → Prod (same process, Prod rules kick in)"
+    }
+}

@@ -1,0 +1,21 @@
+asset_id,asset_name,category,region,country,acquisition_date,acquisition_cost,current_value,depreciation_method,useful_life_years,status
+FA-001,CAT 320 Excavator,Heavy Equipment,NorthEurope,United Kingdom,2019-03-15,485000.00,245000.00,Straight-Line,10,Active
+FA-002,Liebherr LB 28 Drilling Rig,Drilling Equipment,NorthEurope,United Kingdom,2020-07-22,1250000.00,875000.00,Straight-Line,15,Active
+FA-003,Bauer BG 30 Rotary Rig,Drilling Equipment,WestEurope,Germany,2018-01-10,1680000.00,672000.00,Straight-Line,12,Active
+FA-004,Volvo EC480E Excavator,Heavy Equipment,WestEurope,Poland,2021-05-18,520000.00,390000.00,Straight-Line,10,Active
+FA-005,Komatsu PC210 Excavator,Heavy Equipment,APAC,Australia,2017-11-03,395000.00,118500.00,Straight-Line,8,Active
+FA-006,Soilmec SR-75 Piling Rig,Drilling Equipment,APAC,India,2022-02-14,980000.00,816000.00,Straight-Line,12,Active
+FA-007,Ford Transit Fleet (x10),Vehicles,NorthAmerica,United States,2023-06-01,450000.00,360000.00,Straight-Line,6,Active
+FA-008,Hilti TE 3000-AVR Breaker,Tools,NorthEurope,Netherlands,2021-09-30,8500.00,4250.00,Straight-Line,5,Active
+FA-009,Wirtgen W 210 Fi Milling Machine,Heavy Equipment,MiddleEast,UAE,2020-12-05,890000.00,534000.00,Straight-Line,10,Active
+FA-010,Bauer MC 96 Duty-Cycle Crane,Cranes,NorthEurope,United Kingdom,2019-08-20,2100000.00,1260000.00,Straight-Line,15,Active
+FA-011,JCB 3CX Backhoe Loader,Heavy Equipment,WestEurope,France,2022-04-12,125000.00,100000.00,Straight-Line,8,Active
+FA-012,Atlas Copco FlexiROC D65,Drilling Equipment,APAC,Singapore,2023-01-25,750000.00,675000.00,Straight-Line,12,Active
+FA-013,CAT D6T Dozer,Heavy Equipment,NorthAmerica,Canada,2018-06-30,650000.00,227500.00,Straight-Line,10,Active
+FA-014,Liebherr LTM 1100 Mobile Crane,Cranes,MiddleEast,Saudi Arabia,2021-11-15,1950000.00,1462500.00,Straight-Line,15,Active
+FA-015,Manitou MRT 2150 Telehandler,Material Handling,NorthEurope,United Kingdom,2024-01-08,185000.00,166500.00,Straight-Line,8,Active
+FA-016,Office Building - London HQ,Buildings,NorthEurope,United Kingdom,2015-03-01,12500000.00,10000000.00,Straight-Line,30,Active
+FA-017,Warehouse - Melbourne,Buildings,APAC,Australia,2016-09-14,4800000.00,3600000.00,Straight-Line,25,Active
+FA-018,CAT 336 Excavator,Heavy Equipment,WestEurope,Austria,2020-02-28,560000.00,336000.00,Straight-Line,10,Active
+FA-019,Bauer BG 15 H Rotary Rig,Drilling Equipment,NorthEurope,Norway,2019-05-10,1100000.00,660000.00,Straight-Line,12,Under Maintenance
+FA-020,Lab Testing Equipment Set,Lab Equipment,NorthAmerica,United States,2022-08-20,320000.00,240000.00,Straight-Line,10,Active

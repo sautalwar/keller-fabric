@@ -1,0 +1,8 @@
+{
+    "environment": "DEV",
+    "workspace": "WS_Keller_Dev",
+    "lakehouse": "Dev_Lakehouse",
+    "warehouse": "Dev_Warehouse",
+    "sql_endpoint": "dev-sql.fabric.microsoft.com",
+    "notes": "Development environment — safe to experiment. Test data only."
+}

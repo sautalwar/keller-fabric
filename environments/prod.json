@@ -1,0 +1,8 @@
+{
+    "environment": "PROD",
+    "workspace": "WS_Keller_Prod",
+    "lakehouse": "Prod_Lakehouse",
+    "warehouse": "Prod_Warehouse",
+    "sql_endpoint": "prod-sql.fabric.microsoft.com",
+    "notes": "Production — serves real users. Changes require approval."
+}
