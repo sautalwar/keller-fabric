@@ -211,7 +211,7 @@ jobs:
           echo "$REPORTS" | jq . > .promotion-snapshots/source/reports.json
 
           # ── For each report: extract pages ─────────────────────────────
-          echo "$REPORTS" | jq -c '.[]' | while read -r rpt; do
+          echo "$REPORTS" | jq -c '.[]?' | while read -r rpt; do
             RPT_ID=$(echo "$rpt" | jq -r '.id')
             RPT_NAME=$(echo "$rpt" | jq -r '.name')
             echo "  📄 Report: $RPT_NAME ($RPT_ID)"
@@ -235,7 +235,7 @@ jobs:
           echo "$DATASETS" | jq . > .promotion-snapshots/source/datasets.json
 
           # ── For each dataset: extract tables, measures, relationships ──
-          echo "$DATASETS" | jq -c '.[]' | while read -r ds; do
+          echo "$DATASETS" | jq -c '.[]?' | while read -r ds; do
             DS_ID=$(echo "$ds" | jq -r '.id')
             DS_NAME=$(echo "$ds" | jq -r '.name')
             echo "  🧮 Dataset: $DS_NAME ($DS_ID)"
@@ -262,6 +262,7 @@ jobs:
             DEF_RESP=$(curl -s -w "\nHTTP_%{http_code}" -X POST \
               "${FABRIC_API}/workspaces/${SRC_WS}/semanticModels/${DS_ID}/getDefinition?format=TMDL" \
               -H "Authorization: Bearer $FABRIC_TOKEN" \
+              -H "Content-Length: 0" \
               -H "Content-Type: application/json")
             DEF_HTTP=$(echo "$DEF_RESP" | grep "^HTTP_" | sed 's/HTTP_//')
             DEF_BODY=$(echo "$DEF_RESP" | grep -v "^HTTP_")
@@ -339,7 +340,7 @@ jobs:
             -H "Authorization: Bearer $PBI_TOKEN" | jq '.value')
           echo "$REPORTS" | jq . > .promotion-snapshots/target/reports.json
 
-          echo "$REPORTS" | jq -c '.[]' | while read -r rpt; do
+          echo "$REPORTS" | jq -c '.[]?' | while read -r rpt; do
             RPT_ID=$(echo "$rpt" | jq -r '.id')
             PAGES=$(curl -s "${PBI_API}/groups/${TGT_WS}/reports/${RPT_ID}/pages" \
               -H "Authorization: Bearer $PBI_TOKEN")
@@ -350,7 +351,7 @@ jobs:
             -H "Authorization: Bearer $PBI_TOKEN" | jq '.value')
           echo "$DATASETS" | jq . > .promotion-snapshots/target/datasets.json
 
-          echo "$DATASETS" | jq -c '.[]' | while read -r ds; do
+          echo "$DATASETS" | jq -c '.[]?' | while read -r ds; do
             DS_ID=$(echo "$ds" | jq -r '.id')
             TABLES=$(curl -s "${PBI_API}/groups/${TGT_WS}/datasets/${DS_ID}/tables" \
               -H "Authorization: Bearer $PBI_TOKEN" 2>/dev/null)
@@ -360,6 +361,7 @@ jobs:
             DEF_RESP=$(curl -s -w "\nHTTP_%{http_code}" -X POST \
               "${FABRIC_API}/workspaces/${TGT_WS}/semanticModels/${DS_ID}/getDefinition?format=TMDL" \
               -H "Authorization: Bearer $FABRIC_TOKEN" \
+              -H "Content-Length: 0" \
               -H "Content-Type: application/json")
             DEF_HTTP=$(echo "$DEF_RESP" | grep "^HTTP_" | sed 's/HTTP_//')
             DEF_BODY=$(echo "$DEF_RESP" | grep -v "^HTTP_")
@@ -863,7 +865,7 @@ jobs:
               -H "Authorization: Bearer $PBI_TOKEN" | jq '.value')
           fi
 
-          echo "$REPORTS" | jq -c '.[]' | while read -r rpt; do
+          echo "$REPORTS" | jq -c '.[]?' | while read -r rpt; do
             RPT_ID=$(echo "$rpt" | jq -r '.id')
             RPT_NAME=$(echo "$rpt" | jq -r '.name')
             DS_ID=$(echo "$rpt" | jq -r '.datasetId // empty')
@@ -900,7 +902,8 @@ jobs:
               if [ -n "$DS_ID" ]; then
                 DEF=$(curl -s -X POST \
                   "${FABRIC_API}/workspaces/${SRC_WS}/semanticModels/${DS_ID}/getDefinition?format=TMDL" \
-                  -H "Authorization: Bearer $FABRIC_TOKEN")
+                  -H "Authorization: Bearer $FABRIC_TOKEN" \
+              -H "Content-Length: 0")
                 SM_PARTS=$(echo "$DEF" | jq '.definition.parts // empty')
                 if [ -n "$SM_PARTS" ] && [ "$SM_PARTS" != "null" ]; then
                   SM_NAME=$(curl -s "${FABRIC_API}/workspaces/${SRC_WS}/semanticModels/${DS_ID}" \
