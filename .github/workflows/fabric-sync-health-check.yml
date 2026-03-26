@@ -24,23 +24,21 @@ jobs:
     strategy:
       matrix:
         workspace:
-          - name: "KLR-RO-NorthEurope-Dev-PowerBI-SM-WS"
-            id: "DEV-SM-WORKSPACE-GUID"
-          - name: "KLR-RO-NorthEurope-Dev-PowerBI-Reports-WS"
-            id: "DEV-REPORTS-WORKSPACE-GUID"
-          - name: "KLR-RO-NorthEurope-QA-PowerBI-SM-WS"
-            id: "QA-SM-WORKSPACE-GUID"
-          - name: "KLR-RO-NorthEurope-Prod-PowerBI-SM-WS"
-            id: "PROD-SM-WORKSPACE-GUID"
+          - name: "Keller_Dev"
+            id: "6cfe7d37-f6e1-4461-8c01-6c70d981e257"
+          - name: "Keller_QA"
+            id: "13d063c0-fff1-4fbc-9017-0dab65de83c0"
+          - name: "Keller_Prod_NorthEurope"
+            id: "ffc6f8b2-6b5b-46e8-99dc-85f018f51acb"
+          - name: "Keller_Prod_WestEurope"
+            id: "c77159b9-81e2-4547-9b21-8c75da5c5f9b"
       fail-fast: false
 
     steps:
       - name: Azure Login
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.FABRIC_CLIENT_ID }}
-          tenant-id: ${{ secrets.FABRIC_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          creds: '{"clientId":"${{ secrets.FABRIC_CLIENT_ID }}","clientSecret":"${{ secrets.FABRIC_CLIENT_SECRET }}","subscriptionId":"${{ secrets.AZURE_SUBSCRIPTION_ID }}","tenantId":"${{ secrets.FABRIC_TENANT_ID }}"}'
 
       - name: Get Fabric API Token
         id: auth

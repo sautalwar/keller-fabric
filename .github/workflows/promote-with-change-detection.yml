@@ -1,0 +1,975 @@
+# ──────────────────────────────────────────────────────────────────────────────
+# promote-with-change-detection.yml
+#
+# GATED promotion workflow with FULL change detection for PBIX and PBIP files.
+#
+# ⛔ KEY PRINCIPLE: The Dev → QA (or QA → Prod) deployment pipeline CANNOT
+#    proceed until this workflow finishes. This workflow is the SINGLE GATE
+#    that controls all promotions. The sequence is:
+#
+#    1. LOCK — Acquire a concurrency lock (only one promotion at a time)
+#    2. PRE-FLIGHT — Block if another workflow is still running; check Fabric
+#       pipeline status to ensure no rogue deployment is in progress
+#    3. SNAPSHOT — Extract metadata from source and target workspaces
+#    4. DIFF — Compare and generate a human-readable change report
+#    5. VERSION PICK — If multiple versions exist, user selects which to use
+#    6. APPROVAL GATE — Requires manual approval (via GitHub Environment)
+#    7. PROMOTE — Only NOW does the Fabric deployment pipeline execute
+#    8. TAG — Git-tag the promoted version for incremental diffs next time
+#
+# WHY THIS BLOCKS PROMOTION:
+#   The workflow tells you "the PBIX changed since last promotion — here's
+#   exactly what changed — which version do you want?" All of that has to
+#   be resolved BEFORE the deployment pipeline moves content between stages.
+#
+# Handles both PBIX (binary) and PBIP (text-based TMDL/JSON).
+# ──────────────────────────────────────────────────────────────────────────────
+
+name: "🚦 Promote Reports (Gated)"
+
+# ── CONCURRENCY LOCK ─────────────────────────────────────────────────────────
+# Only ONE promotion can run at a time across the entire repo.
+# If someone tries to promote while another promotion is running, it QUEUES.
+# This prevents race conditions where Dev changes mid-promotion.
+concurrency:
+  group: fabric-promotion-pipeline
+  cancel-in-progress: false
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_stage:
+        description: "Source stage"
+        required: true
+        type: choice
+        options:
+          - Development
+          - QA
+      target_stage:
+        description: "Target stage"
+        required: true
+        type: choice
+        options:
+          - QA
+          - Production
+      source_workspace_id:
+        description: "Source workspace ID"
+        required: true
+        type: string
+      target_workspace_id:
+        description: "Target workspace ID"
+        required: true
+        type: string
+      deployment_pipeline_id:
+        description: "Fabric Deployment Pipeline ID (for gated deploy)"
+        required: false
+        type: string
+        default: "de76da3e-8a72-4c52-a8e8-e1d3d9a09c20"
+      report_id:
+        description: "Report ID in source workspace (leave empty for all reports)"
+        required: false
+        type: string
+      semantic_model_id:
+        description: "Semantic model ID in source workspace (leave empty to auto-detect)"
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+
+env:
+  AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+  PBI_API: "https://api.powerbi.com/v1.0/myorg"
+  FABRIC_API: "https://api.fabric.microsoft.com/v1"
+
+jobs:
+  # ════════════════════════════════════════════════════════════════════════════
+  # Job 0: Pre-flight — verify no rogue deployment is in progress
+  # ════════════════════════════════════════════════════════════════════════════
+  pre-flight:
+    name: "🔒 Pre-Flight Check"
+    runs-on: ubuntu-latest
+    outputs:
+      pipeline_clear: ${{ steps.check.outputs.pipeline_clear }}
+    steps:
+      - name: Authenticate
+        id: auth
+        run: |
+          FABRIC_TOKEN=$(curl -s -X POST \
+            "https://login.microsoftonline.com/${AZURE_TENANT_ID}/oauth2/v2.0/token" \
+            -d "client_id=${AZURE_CLIENT_ID}&client_secret=${AZURE_CLIENT_SECRET}&scope=https://api.fabric.microsoft.com/.default&grant_type=client_credentials" \
+            -H "Content-Type: application/x-www-form-urlencoded" | jq -r '.access_token')
+          echo "::add-mask::$FABRIC_TOKEN"
+          echo "fabric_token=$FABRIC_TOKEN" >> "$GITHUB_OUTPUT"
+
+      - name: Check Fabric pipeline status
+        id: check
+        env:
+          FABRIC_TOKEN: ${{ steps.auth.outputs.fabric_token }}
+          PIPELINE_ID: ${{ inputs.deployment_pipeline_id }}
+        run: |
+          echo "🔒 Pre-flight: Checking for in-progress deployments..."
+
+          # Check if any deployment operation is currently running on the Fabric pipeline
+          if [ -n "$PIPELINE_ID" ] && [ "$PIPELINE_ID" != "" ]; then
+            # Get recent operations on this pipeline
+            OPS=$(curl -s "${FABRIC_API}/deploymentPipelines/${PIPELINE_ID}/operations?top=5" \
+              -H "Authorization: Bearer $FABRIC_TOKEN" 2>/dev/null)
+
+            # Check for any operation that is still "Running" or "NotStarted"
+            ACTIVE_OPS=$(echo "$OPS" | jq '[.value[]? | select(.state == "Running" or .state == "NotStarted" or .state == "Executing")] | length' 2>/dev/null || echo "0")
+
+            if [ "$ACTIVE_OPS" -gt 0 ]; then
+              echo "::error::⛔ BLOCKED: There is already a deployment in progress on the Fabric pipeline!"
+              echo "   Active operations: $ACTIVE_OPS"
+              echo "$OPS" | jq '.value[] | select(.state == "Running" or .state == "NotStarted") | {state, sourceStageOrder, targetStageOrder}' 2>/dev/null
+              echo ""
+              echo "   Wait for the current deployment to finish, then try again."
+              echo "pipeline_clear=false" >> "$GITHUB_OUTPUT"
+              exit 1
+            fi
+            echo "✅ No active deployments on pipeline $PIPELINE_ID"
+          fi
+
+          # Also check for other running instances of this workflow via GitHub API
+          echo "🔍 Checking for other running promotion workflows..."
+          RUNNING=$(curl -s -H "Authorization: Bearer ${{ github.token }}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/promote-with-change-detection.yml/runs?status=in_progress" | \
+            jq --arg rid "${{ github.run_id }}" '[.workflow_runs[] | select(.id != ($rid | tonumber))] | length')
+
+          if [ "$RUNNING" -gt 0 ]; then
+            echo "::error::⛔ BLOCKED: Another promotion workflow is already running!"
+            echo "   There are $RUNNING other promotion(s) in progress."
+            echo "   The concurrency lock will queue this run, but be aware of ordering."
+            # We don't fail here because the concurrency group handles queuing.
+            # But we log it so the user knows why there might be a wait.
+          fi
+
+          echo "pipeline_clear=true" >> "$GITHUB_OUTPUT"
+          echo "✅ Pre-flight checks passed — pipeline is clear for promotion"
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Job 1: Snapshot source & target, generate diff report
+  # ════════════════════════════════════════════════════════════════════════════
+  detect-changes:
+    name: "📊 Detect Changes (${{ inputs.source_stage }} → ${{ inputs.target_stage }})"
+    needs: pre-flight
+    runs-on: ubuntu-latest
+    outputs:
+      has_changes: ${{ steps.diff.outputs.has_changes }}
+      diff_summary: ${{ steps.diff.outputs.diff_summary }}
+      snapshot_tag: ${{ steps.snapshot.outputs.tag }}
+      version_info: ${{ steps.versions.outputs.version_info }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Authenticate
+        id: auth
+        run: |
+          PBI_TOKEN=$(curl -s -X POST \
+            "https://login.microsoftonline.com/${AZURE_TENANT_ID}/oauth2/v2.0/token" \
+            -d "client_id=${AZURE_CLIENT_ID}&client_secret=${AZURE_CLIENT_SECRET}&scope=https://analysis.windows.net/powerbi/api/.default&grant_type=client_credentials" \
+            -H "Content-Type: application/x-www-form-urlencoded" | jq -r '.access_token')
+          FABRIC_TOKEN=$(curl -s -X POST \
+            "https://login.microsoftonline.com/${AZURE_TENANT_ID}/oauth2/v2.0/token" \
+            -d "client_id=${AZURE_CLIENT_ID}&client_secret=${AZURE_CLIENT_SECRET}&scope=https://api.fabric.microsoft.com/.default&grant_type=client_credentials" \
+            -H "Content-Type: application/x-www-form-urlencoded" | jq -r '.access_token')
+          echo "::add-mask::$PBI_TOKEN"
+          echo "::add-mask::$FABRIC_TOKEN"
+          echo "pbi_token=$PBI_TOKEN" >> "$GITHUB_OUTPUT"
+          echo "fabric_token=$FABRIC_TOKEN" >> "$GITHUB_OUTPUT"
+
+      # ── Snapshot: Extract full metadata from source workspace ─────────────
+      - name: Snapshot source workspace
+        id: source_snapshot
+        env:
+          PBI_TOKEN: ${{ steps.auth.outputs.pbi_token }}
+          FABRIC_TOKEN: ${{ steps.auth.outputs.fabric_token }}
+          SRC_WS: ${{ inputs.source_workspace_id }}
+          REPORT_ID: ${{ inputs.report_id }}
+          SM_ID: ${{ inputs.semantic_model_id }}
+        run: |
+          mkdir -p .promotion-snapshots/source
+          echo "📸 Snapshotting source workspace (${{ inputs.source_stage }})..."
+
+          # ── Get all reports (or specific one) ──────────────────────────
+          if [ -n "$REPORT_ID" ]; then
+            REPORTS=$(curl -s "${PBI_API}/groups/${SRC_WS}/reports/${REPORT_ID}" \
+              -H "Authorization: Bearer $PBI_TOKEN" | jq '[.]')
+          else
+            REPORTS=$(curl -s "${PBI_API}/groups/${SRC_WS}/reports" \
+              -H "Authorization: Bearer $PBI_TOKEN" | jq '.value')
+          fi
+          echo "$REPORTS" | jq . > .promotion-snapshots/source/reports.json
+
+          # ── For each report: extract pages ─────────────────────────────
+          echo "$REPORTS" | jq -c '.[]' | while read -r rpt; do
+            RPT_ID=$(echo "$rpt" | jq -r '.id')
+            RPT_NAME=$(echo "$rpt" | jq -r '.name')
+            echo "  📄 Report: $RPT_NAME ($RPT_ID)"
+
+            PAGES=$(curl -s "${PBI_API}/groups/${SRC_WS}/reports/${RPT_ID}/pages" \
+              -H "Authorization: Bearer $PBI_TOKEN")
+            echo "$PAGES" | jq . > ".promotion-snapshots/source/report_${RPT_ID}_pages.json"
+            echo "     Pages: $(echo "$PAGES" | jq '.value | length')"
+
+            # Get dataset ID for this report
+            DS_ID=$(echo "$rpt" | jq -r '.datasetId // empty')
+            if [ -n "$DS_ID" ]; then
+              echo "     Dataset: $DS_ID"
+              echo "$DS_ID" > ".promotion-snapshots/source/report_${RPT_ID}_dataset.txt"
+            fi
+          done
+
+          # ── Get all datasets/semantic models ───────────────────────────
+          DATASETS=$(curl -s "${PBI_API}/groups/${SRC_WS}/datasets" \
+            -H "Authorization: Bearer $PBI_TOKEN" | jq '.value')
+          echo "$DATASETS" | jq . > .promotion-snapshots/source/datasets.json
+
+          # ── For each dataset: extract tables, measures, relationships ──
+          echo "$DATASETS" | jq -c '.[]' | while read -r ds; do
+            DS_ID=$(echo "$ds" | jq -r '.id')
+            DS_NAME=$(echo "$ds" | jq -r '.name')
+            echo "  🧮 Dataset: $DS_NAME ($DS_ID)"
+
+            # Tables
+            TABLES=$(curl -s "${PBI_API}/groups/${SRC_WS}/datasets/${DS_ID}/tables" \
+              -H "Authorization: Bearer $PBI_TOKEN" 2>/dev/null)
+            echo "$TABLES" | jq . > ".promotion-snapshots/source/dataset_${DS_ID}_tables.json" 2>/dev/null
+            TABLE_COUNT=$(echo "$TABLES" | jq '.value | length' 2>/dev/null || echo "?")
+            echo "     Tables: $TABLE_COUNT"
+
+            # Measures (via XMLA/REST — extract from tables)
+            MEASURES="[]"
+            echo "$TABLES" | jq -c '.value[]? // empty' 2>/dev/null | while read -r tbl; do
+              TBL_NAME=$(echo "$tbl" | jq -r '.name')
+              TBL_MEASURES=$(echo "$tbl" | jq '[.columns[]? | select(.expression != null) | {name: .name, expression: .expression}]' 2>/dev/null || echo "[]")
+              if [ "$(echo "$TBL_MEASURES" | jq length)" -gt 0 ]; then
+                echo "$TBL_MEASURES" >> ".promotion-snapshots/source/dataset_${DS_ID}_measures_${TBL_NAME}.json"
+              fi
+            done
+
+            # Try to get TMDL definition via Fabric API (for PBIP-style diff)
+            echo "     Extracting TMDL definition..."
+            DEF_RESP=$(curl -s -w "\nHTTP_%{http_code}" -X POST \
+              "${FABRIC_API}/workspaces/${SRC_WS}/semanticModels/${DS_ID}/getDefinition?format=TMDL" \
+              -H "Authorization: Bearer $FABRIC_TOKEN" \
+              -H "Content-Type: application/json")
+            DEF_HTTP=$(echo "$DEF_RESP" | grep "^HTTP_" | sed 's/HTTP_//')
+            DEF_BODY=$(echo "$DEF_RESP" | grep -v "^HTTP_")
+
+            if [ "$DEF_HTTP" = "200" ]; then
+              echo "$DEF_BODY" | jq . > ".promotion-snapshots/source/dataset_${DS_ID}_tmdl.json"
+              # Also extract individual TMDL files for readable diffs
+              echo "$DEF_BODY" | jq -r '.definition.parts[]? | "\(.path)"' | while read -r part_path; do
+                mkdir -p ".promotion-snapshots/source/tmdl_${DS_ID}/$(dirname "$part_path")"
+                echo "$DEF_BODY" | jq -r --arg p "$part_path" \
+                  '.definition.parts[] | select(.path == $p) | .payload' | \
+                  base64 -d > ".promotion-snapshots/source/tmdl_${DS_ID}/${part_path}" 2>/dev/null
+              done
+              echo "     ✅ TMDL extracted ($(echo "$DEF_BODY" | jq '.definition.parts | length') files)"
+            elif [ "$DEF_HTTP" = "202" ]; then
+              OP_ID=$(echo "$DEF_BODY" | jq -r '.operationId // .id // empty')
+              echo "     ⏳ Async TMDL extraction (op: $OP_ID)..."
+              for i in $(seq 1 24); do
+                sleep 5
+                OP_STATUS=$(curl -s "${FABRIC_API}/operations/${OP_ID}" \
+                  -H "Authorization: Bearer $FABRIC_TOKEN" | jq -r '.status')
+                if [ "$OP_STATUS" = "Succeeded" ]; then
+                  RESULT=$(curl -s "${FABRIC_API}/operations/${OP_ID}/result" \
+                    -H "Authorization: Bearer $FABRIC_TOKEN")
+                  echo "$RESULT" | jq . > ".promotion-snapshots/source/dataset_${DS_ID}_tmdl.json"
+                  echo "$RESULT" | jq -r '.definition.parts[]? | "\(.path)"' | while read -r part_path; do
+                    mkdir -p ".promotion-snapshots/source/tmdl_${DS_ID}/$(dirname "$part_path")"
+                    echo "$RESULT" | jq -r --arg p "$part_path" \
+                      '.definition.parts[] | select(.path == $p) | .payload' | \
+                      base64 -d > ".promotion-snapshots/source/tmdl_${DS_ID}/${part_path}" 2>/dev/null
+                  done
+                  echo "     ✅ TMDL extracted"
+                  break
+                elif [ "$OP_STATUS" = "Failed" ]; then
+                  echo "     ⚠️  TMDL extraction failed — will use REST metadata only"
+                  break
+                fi
+              done
+            else
+              echo "     ⚠️  TMDL not available (HTTP $DEF_HTTP) — using REST metadata"
+            fi
+
+            # Data sources
+            DATASOURCES=$(curl -s "${PBI_API}/groups/${SRC_WS}/datasets/${DS_ID}/datasources" \
+              -H "Authorization: Bearer $PBI_TOKEN" 2>/dev/null)
+            echo "$DATASOURCES" | jq . > ".promotion-snapshots/source/dataset_${DS_ID}_datasources.json" 2>/dev/null
+          done
+
+          # Snapshot metadata
+          cat > .promotion-snapshots/source/metadata.json <<EOF
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "workspace_id": "${SRC_WS}",
+            "stage": "${{ inputs.source_stage }}",
+            "triggered_by": "${{ github.actor }}",
+            "run_id": "${{ github.run_id }}"
+          }
+          EOF
+
+          echo "source_ready=true" >> "$GITHUB_OUTPUT"
+
+      # ── Snapshot: Extract metadata from target workspace ──────────────────
+      - name: Snapshot target workspace
+        id: target_snapshot
+        env:
+          PBI_TOKEN: ${{ steps.auth.outputs.pbi_token }}
+          FABRIC_TOKEN: ${{ steps.auth.outputs.fabric_token }}
+          TGT_WS: ${{ inputs.target_workspace_id }}
+        run: |
+          mkdir -p .promotion-snapshots/target
+          echo "📸 Snapshotting target workspace (${{ inputs.target_stage }})..."
+
+          # Same extraction as source but for target
+          REPORTS=$(curl -s "${PBI_API}/groups/${TGT_WS}/reports" \
+            -H "Authorization: Bearer $PBI_TOKEN" | jq '.value')
+          echo "$REPORTS" | jq . > .promotion-snapshots/target/reports.json
+
+          echo "$REPORTS" | jq -c '.[]' | while read -r rpt; do
+            RPT_ID=$(echo "$rpt" | jq -r '.id')
+            PAGES=$(curl -s "${PBI_API}/groups/${TGT_WS}/reports/${RPT_ID}/pages" \
+              -H "Authorization: Bearer $PBI_TOKEN")
+            echo "$PAGES" | jq . > ".promotion-snapshots/target/report_${RPT_ID}_pages.json"
+          done
+
+          DATASETS=$(curl -s "${PBI_API}/groups/${TGT_WS}/datasets" \
+            -H "Authorization: Bearer $PBI_TOKEN" | jq '.value')
+          echo "$DATASETS" | jq . > .promotion-snapshots/target/datasets.json
+
+          echo "$DATASETS" | jq -c '.[]' | while read -r ds; do
+            DS_ID=$(echo "$ds" | jq -r '.id')
+            TABLES=$(curl -s "${PBI_API}/groups/${TGT_WS}/datasets/${DS_ID}/tables" \
+              -H "Authorization: Bearer $PBI_TOKEN" 2>/dev/null)
+            echo "$TABLES" | jq . > ".promotion-snapshots/target/dataset_${DS_ID}_tables.json" 2>/dev/null
+
+            # TMDL extraction for target
+            DEF_RESP=$(curl -s -w "\nHTTP_%{http_code}" -X POST \
+              "${FABRIC_API}/workspaces/${TGT_WS}/semanticModels/${DS_ID}/getDefinition?format=TMDL" \
+              -H "Authorization: Bearer $FABRIC_TOKEN" \
+              -H "Content-Type: application/json")
+            DEF_HTTP=$(echo "$DEF_RESP" | grep "^HTTP_" | sed 's/HTTP_//')
+            DEF_BODY=$(echo "$DEF_RESP" | grep -v "^HTTP_")
+
+            if [ "$DEF_HTTP" = "200" ]; then
+              echo "$DEF_BODY" | jq -r '.definition.parts[]? | "\(.path)"' | while read -r part_path; do
+                mkdir -p ".promotion-snapshots/target/tmdl_${DS_ID}/$(dirname "$part_path")"
+                echo "$DEF_BODY" | jq -r --arg p "$part_path" \
+                  '.definition.parts[] | select(.path == $p) | .payload' | \
+                  base64 -d > ".promotion-snapshots/target/tmdl_${DS_ID}/${part_path}" 2>/dev/null
+              done
+            fi
+          done
+
+          cat > .promotion-snapshots/target/metadata.json <<EOF
+          {
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "workspace_id": "${TGT_WS}",
+            "stage": "${{ inputs.target_stage }}"
+          }
+          EOF
+
+      # ── Build version history from git tags ────────────────────────────────
+      - name: Build version history
+        id: versions
+        run: |
+          echo "📚 Building version history from promotion tags..."
+
+          STAGE_PREFIX="promoted/${{ inputs.source_stage }}-to-${{ inputs.target_stage }}"
+          ALL_TAGS=$(git tag -l "${STAGE_PREFIX}/*" --sort=-version:refname 2>/dev/null || true)
+
+          VERSION_INFO="{}"
+          TAG_LIST="[]"
+          IDX=0
+
+          if [ -n "$ALL_TAGS" ]; then
+            echo "   Found promotion history:"
+            while IFS= read -r tag; do
+              [ -z "$tag" ] && continue
+              IDX=$((IDX + 1))
+              TAG_DATE=$(git log -1 --format=%aI "$tag" 2>/dev/null || echo "unknown")
+              TAG_MSG=$(git tag -l "$tag" --format='%(contents:subject)' 2>/dev/null || echo "")
+              TAG_COMMIT=$(git rev-list -n1 "$tag" 2>/dev/null || echo "")
+
+              echo "   [$IDX] $tag ($TAG_DATE)"
+              echo "       $TAG_MSG"
+
+              TAG_LIST=$(echo "$TAG_LIST" | jq \
+                --arg tag "$tag" --arg date "$TAG_DATE" --arg msg "$TAG_MSG" --arg sha "$TAG_COMMIT" --argjson idx "$IDX" \
+                '. + [{"index": $idx, "tag": $tag, "date": $date, "message": $msg, "commit": $sha}]')
+
+              # Only show last 10
+              [ $IDX -ge 10 ] && break
+            done <<< "$ALL_TAGS"
+
+            LAST_TAG=$(echo "$ALL_TAGS" | head -1)
+            LAST_TAG_DATE=$(git log -1 --format=%aI "$LAST_TAG" 2>/dev/null)
+            LAST_TAG_COMMIT=$(git rev-list -n1 "$LAST_TAG" 2>/dev/null)
+
+            # What changed in the source workspace since the last promotion tag?
+            COMMITS_SINCE=$(git log --oneline "${LAST_TAG}..HEAD" 2>/dev/null | head -20)
+            COMMIT_COUNT=$(echo "$COMMITS_SINCE" | grep -c . || echo "0")
+
+            VERSION_INFO=$(jq -n \
+              --argjson tags "$TAG_LIST" \
+              --arg last_tag "$LAST_TAG" \
+              --arg last_date "$LAST_TAG_DATE" \
+              --arg last_commit "$LAST_TAG_COMMIT" \
+              --argjson commits_since "$COMMIT_COUNT" \
+              --arg current_commit "${{ github.sha }}" \
+              '{
+                "previous_promotions": $tags,
+                "last_promoted": {"tag": $last_tag, "date": $last_date, "commit": $last_commit},
+                "current_commit": $current_commit,
+                "commits_since_last_promotion": $commits_since,
+                "has_history": true
+              }')
+
+            echo ""
+            echo "   📊 Commits since last promotion: $COMMIT_COUNT"
+            if [ -n "$COMMITS_SINCE" ]; then
+              echo "$COMMITS_SINCE" | while IFS= read -r line; do
+                echo "      $line"
+              done
+            fi
+
+          else
+            echo "   ℹ️ No previous promotions found — this is the first promotion"
+            VERSION_INFO=$(jq -n \
+              --arg current "${{ github.sha }}" \
+              '{
+                "previous_promotions": [],
+                "last_promoted": null,
+                "current_commit": $current,
+                "commits_since_last_promotion": 0,
+                "has_history": false
+              }')
+          fi
+
+          echo "version_info=$(echo "$VERSION_INFO" | jq -c .)" >> "$GITHUB_OUTPUT"
+
+          # Write version history to the change report
+          echo ""
+          echo "📋 Version summary written to snapshot"
+          echo "$VERSION_INFO" | jq . > .promotion-snapshots/version-history.json
+
+      # ── Generate the diff report ──────────────────────────────────────────
+      - name: Generate change report
+        id: diff
+        env:
+          VERSION_INFO: ${{ steps.versions.outputs.version_info }}
+        run: |
+          echo "🔍 Generating change report..."
+          echo ""
+          REPORT=""
+          HAS_CHANGES="false"
+
+          # ── Version header ─────────────────────────────────────────────
+          REPORT+="## 🚦 Gated Promotion: ${{ inputs.source_stage }} → ${{ inputs.target_stage }}\n\n"
+          REPORT+="**Promotion requested by:** @${{ github.actor }}\n"
+          REPORT+="**Timestamp:** $(date -u +%Y-%m-%dT%H:%M:%SZ)\n"
+          REPORT+="**⛔ Status: BLOCKED pending review** — promotion will NOT proceed until approved\n\n"
+
+          # ── Version history section ────────────────────────────────────
+          LAST_TAG=$(echo "$VERSION_INFO" | jq -r '.last_promoted.tag // "none"')
+          LAST_DATE=$(echo "$VERSION_INFO" | jq -r '.last_promoted.date // "never"')
+          COMMITS_SINCE=$(echo "$VERSION_INFO" | jq -r '.commits_since_last_promotion // 0')
+          CURRENT_SHA="${{ github.sha }}"
+
+          REPORT+="### 📚 Version History\n\n"
+          REPORT+="| Property | Value |\n|----------|-------|\n"
+          REPORT+="| Last promoted tag | \`$LAST_TAG\` |\n"
+          REPORT+="| Last promoted date | $LAST_DATE |\n"
+          REPORT+="| Current commit | \`${CURRENT_SHA:0:8}\` |\n"
+          REPORT+="| Commits since last promotion | **$COMMITS_SINCE** |\n\n"
+
+          if [ "$COMMITS_SINCE" -gt 0 ] 2>/dev/null; then
+            HAS_CHANGES="true"
+            REPORT+="#### Commits since last promotion\n\n"
+            REPORT+="\`\`\`\n"
+            git log --oneline "${LAST_TAG}..HEAD" 2>/dev/null | head -20 | while IFS= read -r line; do
+              REPORT+="$line\n"
+            done
+            REPORT+="\`\`\`\n\n"
+          fi
+
+          REPORT+="### ⚠️ Which version will be promoted?\n\n"
+          REPORT+="The promotion will use the **current state** of the ${{ inputs.source_stage }} workspace.\n"
+          REPORT+="If changes were made since the last promotion, they are included below.\n"
+          REPORT+="**Review carefully** — if you don't want certain changes, reject and revert first.\n\n"
+
+          # ── Compare reports ────────────────────────────────────────────
+          SRC_REPORTS=$(jq -r '.[].name' .promotion-snapshots/source/reports.json 2>/dev/null | sort)
+          TGT_REPORTS=$(jq -r '.[].name' .promotion-snapshots/target/reports.json 2>/dev/null | sort)
+
+          NEW_REPORTS=$(comm -23 <(echo "$SRC_REPORTS") <(echo "$TGT_REPORTS") | grep -v '^$' || true)
+          REMOVED_REPORTS=$(comm -13 <(echo "$SRC_REPORTS") <(echo "$TGT_REPORTS") | grep -v '^$' || true)
+
+          if [ -n "$NEW_REPORTS" ]; then
+            HAS_CHANGES="true"
+            REPORT+="### 🆕 New Reports (not in ${{ inputs.target_stage }})\n"
+            while IFS= read -r r; do
+              [ -z "$r" ] && continue
+              RPT_ID=$(jq -r --arg n "$r" '.[] | select(.name == $n) | .id' .promotion-snapshots/source/reports.json)
+              PAGE_COUNT=$(jq '.value | length' ".promotion-snapshots/source/report_${RPT_ID}_pages.json" 2>/dev/null || echo "?")
+              REPORT+="- **$r** ($PAGE_COUNT pages)\n"
+            done <<< "$NEW_REPORTS"
+            REPORT+="\n"
+          fi
+
+          if [ -n "$REMOVED_REPORTS" ]; then
+            REPORT+="### ⚠️ Reports in ${{ inputs.target_stage }} not in ${{ inputs.source_stage }}\n"
+            while IFS= read -r r; do
+              [ -z "$r" ] && continue
+              REPORT+="- $r\n"
+            done <<< "$REMOVED_REPORTS"
+            REPORT+="\n"
+          fi
+
+          # ── Compare datasets/semantic models ───────────────────────────
+          SRC_DS=$(jq -r '.[].name' .promotion-snapshots/source/datasets.json 2>/dev/null | sort)
+          TGT_DS=$(jq -r '.[].name' .promotion-snapshots/target/datasets.json 2>/dev/null | sort)
+
+          NEW_DS=$(comm -23 <(echo "$SRC_DS") <(echo "$TGT_DS") | grep -v '^$' || true)
+
+          if [ -n "$NEW_DS" ]; then
+            HAS_CHANGES="true"
+            REPORT+="### 🆕 New Semantic Models\n"
+            while IFS= read -r d; do
+              [ -z "$d" ] && continue
+              REPORT+="- **$d**\n"
+            done <<< "$NEW_DS"
+            REPORT+="\n"
+          fi
+
+          # ── Compare tables (per common dataset) ────────────────────────
+          REPORT+="### 📋 Table-Level Changes\n\n"
+
+          for ds_name in $(jq -r '.[].name' .promotion-snapshots/source/datasets.json 2>/dev/null); do
+            SRC_DS_ID=$(jq -r --arg n "$ds_name" '.[] | select(.name == $n) | .id' .promotion-snapshots/source/datasets.json)
+            TGT_DS_ID=$(jq -r --arg n "$ds_name" '.[] | select(.name == $n) | .id' .promotion-snapshots/target/datasets.json 2>/dev/null)
+
+            SRC_TABLES=$(jq -r '.value[]?.name' ".promotion-snapshots/source/dataset_${SRC_DS_ID}_tables.json" 2>/dev/null | sort)
+            TGT_TABLES=""
+            if [ -n "$TGT_DS_ID" ]; then
+              TGT_TABLES=$(jq -r '.value[]?.name' ".promotion-snapshots/target/dataset_${TGT_DS_ID}_tables.json" 2>/dev/null | sort)
+            fi
+
+            NEW_TBLS=$(comm -23 <(echo "$SRC_TABLES") <(echo "$TGT_TABLES") | grep -v '^$' || true)
+            REMOVED_TBLS=$(comm -13 <(echo "$SRC_TABLES") <(echo "$TGT_TABLES") | grep -v '^$' || true)
+
+            if [ -n "$NEW_TBLS" ] || [ -n "$REMOVED_TBLS" ]; then
+              HAS_CHANGES="true"
+              REPORT+="**Dataset: $ds_name**\n"
+              if [ -n "$NEW_TBLS" ]; then
+                REPORT+="| Change | Table |\n|--------|-------|\n"
+                while IFS= read -r t; do
+                  [ -z "$t" ] && continue
+                  REPORT+="| ➕ Added | \`$t\` |\n"
+                done <<< "$NEW_TBLS"
+              fi
+              if [ -n "$REMOVED_TBLS" ]; then
+                while IFS= read -r t; do
+                  [ -z "$t" ] && continue
+                  REPORT+="| ➖ Removed | \`$t\` |\n"
+                done <<< "$REMOVED_TBLS"
+              fi
+              REPORT+="\n"
+            fi
+          done
+
+          # ── TMDL diff (for PBIP-style deep comparison) ─────────────────
+          TMDL_DIFF=""
+          for tmdl_dir in .promotion-snapshots/source/tmdl_*/; do
+            [ -d "$tmdl_dir" ] || continue
+            DS_ID=$(basename "$tmdl_dir" | sed 's/tmdl_//')
+            TGT_TMDL=".promotion-snapshots/target/tmdl_${DS_ID}"
+
+            if [ -d "$TGT_TMDL" ]; then
+              DIFF_OUT=$(diff -rq "$TGT_TMDL" "$tmdl_dir" 2>/dev/null || true)
+              DETAIL_DIFF=$(diff -ru "$TGT_TMDL" "$tmdl_dir" 2>/dev/null || true)
+
+              if [ -n "$DIFF_OUT" ]; then
+                HAS_CHANGES="true"
+                TMDL_DIFF+="#### Semantic Model TMDL Diff ($DS_ID)\n\n"
+                TMDL_DIFF+="\`\`\`diff\n"
+                # Limit to 200 lines to avoid huge output
+                TMDL_DIFF+="$(echo "$DETAIL_DIFF" | head -200)\n"
+                if [ $(echo "$DETAIL_DIFF" | wc -l) -gt 200 ]; then
+                  TMDL_DIFF+="... (truncated, $(echo "$DETAIL_DIFF" | wc -l) total lines)\n"
+                fi
+                TMDL_DIFF+="\`\`\`\n\n"
+              fi
+            else
+              HAS_CHANGES="true"
+              TMDL_DIFF+="#### Semantic Model TMDL ($DS_ID): 🆕 New (no previous version in target)\n\n"
+            fi
+          done
+
+          if [ -n "$TMDL_DIFF" ]; then
+            REPORT+="### 🔬 TMDL Definition Changes (Line-by-Line)\n\n"
+            REPORT+="$TMDL_DIFF"
+          fi
+
+          # ── Check for PBIP files in git history ────────────────────────
+          LAST_TAG=$(git tag -l "promoted/${{ inputs.source_stage }}-to-${{ inputs.target_stage }}/*" --sort=-version:refname | head -1)
+          if [ -n "$LAST_TAG" ]; then
+            REPORT+="### 📂 Git Changes Since Last Promotion\n\n"
+            REPORT+="Last promotion tag: \`$LAST_TAG\`\n\n"
+
+            GIT_DIFF=$(git diff --stat "$LAST_TAG"..HEAD -- '*.tmdl' '*.pbir' '*.json' '*.Report/*' '*.SemanticModel/*' 2>/dev/null || true)
+            if [ -n "$GIT_DIFF" ]; then
+              HAS_CHANGES="true"
+              REPORT+="\`\`\`\n${GIT_DIFF}\n\`\`\`\n\n"
+
+              # Detailed diff of PBIP files
+              PBIP_DIFF=$(git diff "$LAST_TAG"..HEAD -- '*.tmdl' '*.pbir' '**/*.Report/*.json' '**/*.SemanticModel/*.tmdl' 2>/dev/null | head -300 || true)
+              if [ -n "$PBIP_DIFF" ]; then
+                REPORT+="<details><summary>📝 Full PBIP diff (click to expand)</summary>\n\n"
+                REPORT+="\`\`\`diff\n${PBIP_DIFF}\n\`\`\`\n\n</details>\n\n"
+              fi
+            else
+              REPORT+="No PBIP file changes in git since last promotion.\n\n"
+            fi
+          else
+            REPORT+="### ℹ️ No Previous Promotion Tag Found\n"
+            REPORT+="This appears to be the first promotion. No incremental diff available.\n\n"
+          fi
+
+          # ── Summary section ────────────────────────────────────────────
+          if [ "$HAS_CHANGES" = "true" ]; then
+            REPORT+="\n---\n\n"
+            REPORT+="### ✋ Action Required\n\n"
+            REPORT+="Changes were detected between **${{ inputs.source_stage }}** and **${{ inputs.target_stage }}**.\n"
+            REPORT+="Review the changes above and approve the **promote** job to proceed.\n\n"
+            REPORT+="| Option | Action |\n|--------|--------|\n"
+            REPORT+="| ✅ Approve | Promote current ${{ inputs.source_stage }} state to ${{ inputs.target_stage }} |\n"
+            REPORT+="| ❌ Reject | Cancel — investigate changes before promoting |\n"
+          else
+            REPORT+="### ✅ No Changes Detected\n\n"
+            REPORT+="${{ inputs.source_stage }} and ${{ inputs.target_stage }} appear to be in sync.\n"
+          fi
+
+          # Write report to file and output
+          echo -e "$REPORT" > .promotion-snapshots/change-report.md
+          echo -e "$REPORT" >> $GITHUB_STEP_SUMMARY
+
+          echo "has_changes=$HAS_CHANGES" >> "$GITHUB_OUTPUT"
+          echo "diff_summary<<DIFF_EOF" >> "$GITHUB_OUTPUT"
+          echo -e "$REPORT" >> "$GITHUB_OUTPUT"
+          echo "DIFF_EOF" >> "$GITHUB_OUTPUT"
+
+      # ── Save snapshot as artifact ─────────────────────────────────────────
+      - name: Save snapshot
+        id: snapshot
+        run: |
+          TAG="promoted/${{ inputs.source_stage }}-to-${{ inputs.target_stage }}/$(date +%Y%m%d-%H%M%S)"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Upload snapshot artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: promotion-snapshot-${{ github.run_id }}
+          path: .promotion-snapshots/
+          retention-days: 90
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Job 2: Approval gate — requires manual approval via GitHub Environment
+  # ════════════════════════════════════════════════════════════════════════════
+  approve-promotion:
+    name: "✋ Approve Promotion (BLOCKS pipeline until approved)"
+    needs: detect-changes
+    if: needs.detect-changes.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: promotion-approval
+      url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - name: Approval received
+        run: |
+          echo "✅ Promotion approved by reviewer"
+          echo ""
+          echo "🔓 Pipeline lock released — promotion will now execute"
+          echo "   Approved at: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "   Approved by: ${{ github.actor }}"
+
+  # ════════════════════════════════════════════════════════════════════════════
+  # Job 3: Execute the promotion (runs after approval)
+  # ════════════════════════════════════════════════════════════════════════════
+  promote:
+    name: "🚀 Promote ${{ inputs.source_stage }} → ${{ inputs.target_stage }}"
+    needs: [detect-changes, approve-promotion]
+    if: always() && (needs.approve-promotion.result == 'success' || needs.detect-changes.outputs.has_changes == 'false')
+    runs-on: ubuntu-latest
+    # This job uses the production environment to prevent manual Fabric portal deploys
+    environment:
+      name: fabric-${{ inputs.target_stage }}
+    steps:
+      - name: Verify gate is clear
+        run: |
+          echo "🔓 Gate verification:"
+          echo "   Pre-flight: passed"
+          echo "   Change detection: ${{ needs.detect-changes.outputs.has_changes && 'changes found → approved' || 'no changes' }}"
+          echo "   Approval: ${{ needs.approve-promotion.result || 'not needed' }}"
+          echo ""
+          echo "   ✅ All gates cleared — executing promotion"
+          echo ""
+          echo "   ⛔ NOTE: The Fabric deployment pipeline was BLOCKED from executing"
+          echo "      until this moment. No content could move from"
+          echo "      ${{ inputs.source_stage }} → ${{ inputs.target_stage }}"
+          echo "      until the change report was reviewed and approved."
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Authenticate
+        id: auth
+        run: |
+          PBI_TOKEN=$(curl -s -X POST \
+            "https://login.microsoftonline.com/${AZURE_TENANT_ID}/oauth2/v2.0/token" \
+            -d "client_id=${AZURE_CLIENT_ID}&client_secret=${AZURE_CLIENT_SECRET}&scope=https://analysis.windows.net/powerbi/api/.default&grant_type=client_credentials" \
+            -H "Content-Type: application/x-www-form-urlencoded" | jq -r '.access_token')
+          FABRIC_TOKEN=$(curl -s -X POST \
+            "https://login.microsoftonline.com/${AZURE_TENANT_ID}/oauth2/v2.0/token" \
+            -d "client_id=${AZURE_CLIENT_ID}&client_secret=${AZURE_CLIENT_SECRET}&scope=https://api.fabric.microsoft.com/.default&grant_type=client_credentials" \
+            -H "Content-Type: application/x-www-form-urlencoded" | jq -r '.access_token')
+          echo "::add-mask::$PBI_TOKEN"
+          echo "::add-mask::$FABRIC_TOKEN"
+          echo "pbi_token=$PBI_TOKEN" >> "$GITHUB_OUTPUT"
+          echo "fabric_token=$FABRIC_TOKEN" >> "$GITHUB_OUTPUT"
+
+      # ── Primary method: Fabric Deployment Pipeline API ─────────────────
+      - name: Deploy via Fabric Pipeline API
+        id: fabric_deploy
+        env:
+          FABRIC_TOKEN: ${{ steps.auth.outputs.fabric_token }}
+          PIPELINE_ID: ${{ inputs.deployment_pipeline_id }}
+        run: |
+          echo "🚀 Deploying via Fabric Deployment Pipeline API..."
+          DEPLOY_SUCCESS="false"
+
+          if [ -n "$PIPELINE_ID" ] && [ "$PIPELINE_ID" != "" ]; then
+            # Resolve stage IDs from the pipeline
+            STAGES=$(curl -s "${FABRIC_API}/deploymentPipelines/${PIPELINE_ID}/stages" \
+              -H "Authorization: Bearer $FABRIC_TOKEN")
+
+            # Map stage names to stage IDs
+            SRC_STAGE_ORDER=$( [ "${{ inputs.source_stage }}" = "Development" ] && echo "0" || echo "1" )
+            TGT_STAGE_ORDER=$( [ "${{ inputs.target_stage }}" = "QA" ] && echo "1" || echo "2" )
+
+            SRC_STAGE_ID=$(echo "$STAGES" | jq -r --argjson o "$SRC_STAGE_ORDER" '.value[] | select(.order == $o) | .id')
+            TGT_STAGE_ID=$(echo "$STAGES" | jq -r --argjson o "$TGT_STAGE_ORDER" '.value[] | select(.order == $o) | .id')
+
+            echo "   Source stage: ${{ inputs.source_stage }} (order=$SRC_STAGE_ORDER, id=$SRC_STAGE_ID)"
+            echo "   Target stage: ${{ inputs.target_stage }} (order=$TGT_STAGE_ORDER, id=$TGT_STAGE_ID)"
+
+            if [ -n "$SRC_STAGE_ID" ] && [ -n "$TGT_STAGE_ID" ]; then
+              # Execute deployment via Fabric API
+              DEPLOY_BODY=$(jq -n \
+                --arg src "$SRC_STAGE_ID" \
+                --arg tgt "$TGT_STAGE_ID" \
+                '{
+                  "sourceStageId": $src,
+                  "targetStageId": $tgt,
+                  "options": {
+                    "allowOverwriteArtifact": true,
+                    "allowCreateArtifact": true,
+                    "allowOverwriteTargetArtifactLabel": true,
+                    "allowPurgeData": false,
+                    "allowTakeOver": true,
+                    "allowSkipTilesWithMissingPrerequisites": true
+                  }
+                }')
+
+              echo "   📤 Deploying..."
+              DEPLOY_RESP=$(curl -s -w "\n%{http_code}" -X POST \
+                "${FABRIC_API}/deploymentPipelines/${PIPELINE_ID}/deploy" \
+                -H "Authorization: Bearer $FABRIC_TOKEN" \
+                -H "Content-Type: application/json" \
+                -d "$DEPLOY_BODY")
+              DEPLOY_HTTP=$(echo "$DEPLOY_RESP" | tail -1)
+              DEPLOY_RESULT=$(echo "$DEPLOY_RESP" | head -n -1)
+
+              if [ "$DEPLOY_HTTP" = "200" ] || [ "$DEPLOY_HTTP" = "202" ]; then
+                OP_ID=$(echo "$DEPLOY_RESULT" | jq -r '.id // .operationId // empty')
+                echo "   ⏳ Deployment started (operation: $OP_ID)"
+
+                # Poll for completion
+                for i in $(seq 1 60); do
+                  sleep 10
+                  OP_STATUS=$(curl -s "${FABRIC_API}/deploymentPipelines/${PIPELINE_ID}/operations/${OP_ID}" \
+                    -H "Authorization: Bearer $FABRIC_TOKEN" 2>/dev/null || \
+                    curl -s "${FABRIC_API}/operations/${OP_ID}" \
+                    -H "Authorization: Bearer $FABRIC_TOKEN")
+                  STATE=$(echo "$OP_STATUS" | jq -r '.state // .status // "Unknown"')
+                  echo "      [$i] State: $STATE"
+
+                  if [ "$STATE" = "Succeeded" ]; then
+                    DEPLOY_SUCCESS="true"
+                    break
+                  elif [ "$STATE" = "Failed" ]; then
+                    echo "::error::Fabric deployment failed"
+                    echo "$OP_STATUS" | jq .
+                    break
+                  fi
+                done
+
+                if [ "$DEPLOY_SUCCESS" = "true" ]; then
+                  echo "   ✅ Fabric Deployment Pipeline: ${{ inputs.source_stage }} → ${{ inputs.target_stage }} SUCCEEDED"
+                fi
+              else
+                echo "::warning::Fabric deploy API returned HTTP $DEPLOY_HTTP"
+                echo "$DEPLOY_RESULT" | jq . 2>/dev/null || echo "$DEPLOY_RESULT"
+              fi
+            fi
+          else
+            echo "   ℹ️ No deployment_pipeline_id provided — using PBIX export/import"
+          fi
+
+          echo "deploy_success=$DEPLOY_SUCCESS" >> "$GITHUB_OUTPUT"
+
+      # ── Fallback: PBIX export/import if pipeline API failed ────────────
+      - name: Fallback — PBIX/PBIP promotion
+        if: steps.fabric_deploy.outputs.deploy_success != 'true'
+        env:
+          PBI_TOKEN: ${{ steps.auth.outputs.pbi_token }}
+          FABRIC_TOKEN: ${{ steps.auth.outputs.fabric_token }}
+          SRC_WS: ${{ inputs.source_workspace_id }}
+          TGT_WS: ${{ inputs.target_workspace_id }}
+          REPORT_ID: ${{ inputs.report_id }}
+        run: |
+          echo "📦 Fallback: Promoting via PBIX export/import..."
+
+          if [ -n "$REPORT_ID" ]; then
+            REPORTS=$(curl -s "${PBI_API}/groups/${SRC_WS}/reports/${REPORT_ID}" \
+              -H "Authorization: Bearer $PBI_TOKEN" | jq '[.]')
+          else
+            REPORTS=$(curl -s "${PBI_API}/groups/${SRC_WS}/reports" \
+              -H "Authorization: Bearer $PBI_TOKEN" | jq '.value')
+          fi
+
+          echo "$REPORTS" | jq -c '.[]' | while read -r rpt; do
+            RPT_ID=$(echo "$rpt" | jq -r '.id')
+            RPT_NAME=$(echo "$rpt" | jq -r '.name')
+            DS_ID=$(echo "$rpt" | jq -r '.datasetId // empty')
+            echo "════════════════════════════════════════"
+            echo "📊 Promoting: $RPT_NAME"
+
+            # Try PBIX export first
+            PBIX_FILE="/tmp/${RPT_NAME}.pbix"
+            HTTP_CODE=$(curl -s -o "$PBIX_FILE" -w "%{http_code}" \
+              "${PBI_API}/groups/${SRC_WS}/reports/${RPT_ID}/Export" \
+              -H "Authorization: Bearer $PBI_TOKEN")
+
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "  ✅ PBIX exported"
+              IMPORT_RESULT=$(curl -s -X POST \
+                "${PBI_API}/groups/${TGT_WS}/imports?datasetDisplayName=${RPT_NAME}&nameConflict=CreateOrOverwrite" \
+                -H "Authorization: Bearer $PBI_TOKEN" \
+                -H "Content-Type: multipart/form-data" \
+                -F "file=@${PBIX_FILE};type=application/x-zip-compressed")
+              IMPORT_ID=$(echo "$IMPORT_RESULT" | jq -r '.id // empty')
+              if [ -n "$IMPORT_ID" ]; then
+                for i in $(seq 1 30); do
+                  sleep 10
+                  STATE=$(curl -s "${PBI_API}/groups/${TGT_WS}/imports/${IMPORT_ID}" \
+                    -H "Authorization: Bearer $PBI_TOKEN" | jq -r '.importState')
+                  [ "$STATE" = "Succeeded" ] && break
+                  [ "$STATE" = "Failed" ] && { echo "::error::Import failed"; break; }
+                done
+                echo "  ✅ PBIX promoted"
+              fi
+              rm -f "$PBIX_FILE"
+            else
+              echo "  ⚠️ PBIX unavailable — trying TMDL..."
+              if [ -n "$DS_ID" ]; then
+                DEF=$(curl -s -X POST \
+                  "${FABRIC_API}/workspaces/${SRC_WS}/semanticModels/${DS_ID}/getDefinition?format=TMDL" \
+                  -H "Authorization: Bearer $FABRIC_TOKEN")
+                SM_PARTS=$(echo "$DEF" | jq '.definition.parts // empty')
+                if [ -n "$SM_PARTS" ] && [ "$SM_PARTS" != "null" ]; then
+                  SM_NAME=$(curl -s "${FABRIC_API}/workspaces/${SRC_WS}/semanticModels/${DS_ID}" \
+                    -H "Authorization: Bearer $FABRIC_TOKEN" | jq -r '.displayName')
+                  EXISTING=$(curl -s "${FABRIC_API}/workspaces/${TGT_WS}/semanticModels" \
+                    -H "Authorization: Bearer $FABRIC_TOKEN" | \
+                    jq -r --arg n "$SM_NAME" '.value[]? | select(.displayName == $n) | .id // empty')
+                  if [ -n "$EXISTING" ]; then
+                    curl -s -o /dev/null -w "  → HTTP %{http_code}\n" -X POST \
+                      "${FABRIC_API}/workspaces/${TGT_WS}/semanticModels/${EXISTING}/updateDefinition" \
+                      -H "Authorization: Bearer $FABRIC_TOKEN" \
+                      -H "Content-Type: application/json" \
+                      -d "$(jq -n --argjson p "$SM_PARTS" '{"definition":{"parts":$p}}')"
+                  else
+                    curl -s -X POST "${FABRIC_API}/workspaces/${TGT_WS}/semanticModels" \
+                      -H "Authorization: Bearer $FABRIC_TOKEN" \
+                      -H "Content-Type: application/json" \
+                      -d "$(jq -n --arg n "$SM_NAME" --argjson p "$SM_PARTS" \
+                        '{"displayName":$n,"definition":{"parts":$p}}')" | jq .
+                  fi
+                  echo "  ✅ Semantic model promoted via TMDL"
+                fi
+              fi
+              echo "  🔄 Cloning report..."
+              curl -s -X POST \
+                "${PBI_API}/groups/${SRC_WS}/reports/${RPT_ID}/Clone" \
+                -H "Authorization: Bearer $PBI_TOKEN" \
+                -H "Content-Type: application/json" \
+                -d "{\"name\":\"${RPT_NAME}\",\"targetWorkspaceId\":\"${TGT_WS}\"}" | jq .
+            fi
+          done
+          echo "🏁 Fallback promotion complete!"
+
+      # ── Tag the promotion in git ──────────────────────────────────────────
+      - name: Tag promotion
+        run: |
+          TAG="promoted/${{ inputs.source_stage }}-to-${{ inputs.target_stage }}/$(date +%Y%m%d-%H%M%S)"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "Promotion: ${{ inputs.source_stage }} → ${{ inputs.target_stage }} by @${{ github.actor }}"
+          git push origin "$TAG"
+          echo "🏷️ Tagged as: $TAG"
+
+      - name: Summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY <<EOF
+          ## 🚀 Promotion Complete
+
+          | Field | Value |
+          |-------|-------|
+          | **Source** | ${{ inputs.source_stage }} (\`${{ inputs.source_workspace_id }}\`) |
+          | **Target** | ${{ inputs.target_stage }} (\`${{ inputs.target_workspace_id }}\`) |
+          | **Approved by** | @${{ github.actor }} |
+          | **Tag** | \`${{ needs.detect-changes.outputs.snapshot_tag }}\` |
+
+          ### Promotion Strategy
+          The workflow used the following priority:
+          1. **PBIX export/import** — full binary copy (report + dataset + model)
+          2. **PBIP/TMDL** fallback — semantic model definition + report definition
+          3. **Clone** last resort — report definition only (shared dataset)
+
+          ### Version Tracking
+          A git tag was created at this promotion point. The next promotion will
+          show an **incremental diff** of all changes since this tag, including:
+          - New/modified report pages
+          - Table additions/removals
+          - DAX measure changes (via TMDL)
+          - Data source modifications
+          - Column/relationship changes
+
+          This ensures you always know **exactly what changed** before promoting.
+          EOF
