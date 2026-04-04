@@ -1,0 +1,203 @@
+# ============================================================
+# Environment-Aware DFG2: Update Parameters Post-Deployment
+# ============================================================
+# PURPOSE: After the Fabric deployment pipeline promotes DFG2
+#          from Dev → QA → Prod, this workflow calls the
+#          Fabric REST API to update DFG2 parameters to match
+#          the target environment.
+#
+# WHY: DFG2 CI/CD (Preview) doesn't support deployment rules
+#      yet, so parameters arrive unchanged after deployment.
+#      This workflow fixes that automatically.
+#
+# TRIGGER: Manual (workflow_dispatch) — select the target env.
+# ============================================================
+
+name: Update DFG2 Parameters Post-Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_environment:
+        description: 'Target environment to update'
+        required: true
+        type: choice
+        options:
+          - qa
+          - prod
+      dry_run:
+        description: 'Dry run (show what would change, do not apply)'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  # Workspace IDs — from setup-keller-fabric.ps1
+  DEV_WORKSPACE_ID: "6cfe7d37-f6e1-4461-8c01-6c70d981e257"
+  QA_WORKSPACE_ID: "13d063c0-fff1-4fbc-9017-0dab65de83c0"
+  PROD_WORKSPACE_ID: "ffc6f8b2-6b5b-46e8-99dc-85f018f51acb"
+  DFG2_NAME: "df_keller_file_ingestion"
+
+jobs:
+  update-dfg2-parameters:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set environment-specific variables
+        id: env-config
+        run: |
+          if [ "${{ inputs.target_environment }}" = "qa" ]; then
+            echo "workspace_id=${{ env.QA_WORKSPACE_ID }}" >> $GITHUB_OUTPUT
+            echo "lakehouse_name=QA_Lakehouse" >> $GITHUB_OUTPUT
+            echo "filter_region=EMEA" >> $GITHUB_OUTPUT
+            echo "env_label=QA Testing" >> $GITHUB_OUTPUT
+          elif [ "${{ inputs.target_environment }}" = "prod" ]; then
+            echo "workspace_id=${{ env.PROD_WORKSPACE_ID }}" >> $GITHUB_OUTPUT
+            echo "lakehouse_name=Prod_Lakehouse" >> $GITHUB_OUTPUT
+            echo "filter_region=ALL" >> $GITHUB_OUTPUT
+            echo "env_label=Production" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Authenticate to Fabric
+        id: auth
+        run: |
+          # Get access token using service principal
+          TOKEN=$(curl -s -X POST \
+            "https://login.microsoftonline.com/${{ secrets.AZURE_TENANT_ID }}/oauth2/v2.0/token" \
+            -d "client_id=${{ secrets.AZURE_CLIENT_ID }}" \
+            -d "client_secret=${{ secrets.AZURE_CLIENT_SECRET }}" \
+            -d "scope=https://api.fabric.microsoft.com/.default" \
+            -d "grant_type=client_credentials" \
+            | jq -r '.access_token')
+          echo "::add-mask::$TOKEN"
+          echo "token=$TOKEN" >> $GITHUB_OUTPUT
+
+      - name: Find DFG2 item in target workspace
+        id: find-dfg2
+        run: |
+          WORKSPACE_ID="${{ steps.env-config.outputs.workspace_id }}"
+
+          # List all items in the target workspace
+          RESPONSE=$(curl -s -X GET \
+            "https://api.fabric.microsoft.com/v1/workspaces/${WORKSPACE_ID}/items" \
+            -H "Authorization: Bearer ${{ steps.auth.outputs.token }}" \
+            -H "Content-Type: application/json")
+
+          # Find the DFG2 by name
+          DFG2_ID=$(echo "$RESPONSE" | jq -r \
+            ".value[] | select(.displayName==\"${{ env.DFG2_NAME }}\") | .id")
+
+          if [ -z "$DFG2_ID" ] || [ "$DFG2_ID" = "null" ]; then
+            echo "ERROR: DFG2 '${{ env.DFG2_NAME }}' not found in workspace ${WORKSPACE_ID}"
+            exit 1
+          fi
+
+          echo "dfg2_id=$DFG2_ID" >> $GITHUB_OUTPUT
+          echo "Found DFG2: ${{ env.DFG2_NAME }} (ID: $DFG2_ID)"
+
+      - name: Show current parameters (before update)
+        run: |
+          WORKSPACE_ID="${{ steps.env-config.outputs.workspace_id }}"
+          DFG2_ID="${{ steps.find-dfg2.outputs.dfg2_id }}"
+
+          echo "=== Current DFG2 Parameters ==="
+          echo "Environment: ${{ steps.env-config.outputs.env_label }}"
+          echo "Workspace:   ${WORKSPACE_ID}"
+          echo "DFG2 ID:     ${DFG2_ID}"
+          echo ""
+
+          # Get current item definition
+          curl -s -X POST \
+            "https://api.fabric.microsoft.com/v1/workspaces/${WORKSPACE_ID}/items/${DFG2_ID}/getDefinition" \
+            -H "Authorization: Bearer ${{ steps.auth.outputs.token }}" \
+            -H "Content-Type: application/json" \
+            | jq '.'
+
+      - name: Update DFG2 parameters
+        if: ${{ inputs.dry_run == false }}
+        run: |
+          WORKSPACE_ID="${{ steps.env-config.outputs.workspace_id }}"
+          DFG2_ID="${{ steps.find-dfg2.outputs.dfg2_id }}"
+          LAKEHOUSE="${{ steps.env-config.outputs.lakehouse_name }}"
+          REGION="${{ steps.env-config.outputs.filter_region }}"
+
+          echo "=== Updating Parameters ==="
+          echo "  pLakehouseName -> ${LAKEHOUSE}"
+          echo "  pFilterRegion  -> ${REGION}"
+          echo ""
+
+          # Update the item definition with new parameter values
+          # The exact payload depends on the DFG2 definition format.
+          # This uses the updateDefinition API to replace parameter defaults.
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "https://api.fabric.microsoft.com/v1/workspaces/${WORKSPACE_ID}/items/${DFG2_ID}/updateDefinition" \
+            -H "Authorization: Bearer ${{ steps.auth.outputs.token }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"definition\": {
+                \"parts\": [
+                  {
+                    \"path\": \"dataflow.json\",
+                    \"payloadType\": \"InlineBase64\",
+                    \"payload\": \"$(echo -n "{
+                      \"parameters\": {
+                        \"pLakehouseName\": \"${LAKEHOUSE}\",
+                        \"pSourceTable\": \"raw_project_costs\",
+                        \"pFilterRegion\": \"${REGION}\"
+                      }
+                    }" | base64 -w 0)\"
+                  }
+                ]
+              }
+            }")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | head -n -1)
+
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+            echo "SUCCESS: Parameters updated for ${{ steps.env-config.outputs.env_label }}"
+          else
+            echo "ERROR: HTTP ${HTTP_CODE}"
+            echo "$BODY" | jq '.' 2>/dev/null || echo "$BODY"
+            exit 1
+          fi
+
+      - name: Dry run summary
+        if: ${{ inputs.dry_run == true }}
+        run: |
+          echo "=== DRY RUN — No changes applied ==="
+          echo ""
+          echo "Would update DFG2 '${{ env.DFG2_NAME }}' in ${{ steps.env-config.outputs.env_label }}:"
+          echo "  pLakehouseName: Dev_Lakehouse -> ${{ steps.env-config.outputs.lakehouse_name }}"
+          echo "  pFilterRegion:  ALL           -> ${{ steps.env-config.outputs.filter_region }}"
+          echo ""
+          echo "To apply, re-run with dry_run = false"
+
+      - name: Trigger DFG2 refresh
+        if: ${{ inputs.dry_run == false }}
+        run: |
+          WORKSPACE_ID="${{ steps.env-config.outputs.workspace_id }}"
+          DFG2_ID="${{ steps.find-dfg2.outputs.dfg2_id }}"
+
+          echo "Triggering DFG2 refresh to apply new parameters..."
+
+          curl -s -X POST \
+            "https://api.fabric.microsoft.com/v1/workspaces/${WORKSPACE_ID}/items/${DFG2_ID}/jobs/instances?jobType=Pipeline" \
+            -H "Authorization: Bearer ${{ steps.auth.outputs.token }}" \
+            -H "Content-Type: application/json"
+
+          echo "Refresh triggered. DFG2 will now run with updated parameters."
+
+      - name: Summary
+        run: |
+          echo "## DFG2 Parameter Update Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Setting | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Environment | ${{ steps.env-config.outputs.env_label }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| DFG2 | ${{ env.DFG2_NAME }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| pLakehouseName | ${{ steps.env-config.outputs.lakehouse_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| pFilterRegion | ${{ steps.env-config.outputs.filter_region }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Dry Run | ${{ inputs.dry_run }} |" >> $GITHUB_STEP_SUMMARY

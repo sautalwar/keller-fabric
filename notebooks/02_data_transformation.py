@@ -13,7 +13,7 @@
 from pyspark.sql.functions import (
     col, to_date, year, month, datediff, current_date,
     round as spark_round, when, lit, sum as spark_sum,
-    avg, count, current_timestamp
+    avg, count, current_timestamp, concat_ws
 )
 
 # COMMAND ----------
@@ -107,20 +107,6 @@ print(f"✅ silver_regional_budgets: {silver_budgets.count()} rows")
 # COMMAND ----------
 
 bronze_employees = spark.table("bronze_employee_regions")
-
-silver_employees = (
-    bronze_employees
-    .withColumn(
-        "security_group",
-        when(col("is_manager") == True,
-             concat_ws("-", lit("Manager"), col("region")))
-        .otherwise(concat_ws("-", lit("Viewer"), col("region")))
-    )
-    .withColumn("_transformed_at", current_timestamp())
-    .drop("_ingested_at", "_source_file")
-)
-
-from pyspark.sql.functions import concat_ws
 
 silver_employees = (
     bronze_employees
