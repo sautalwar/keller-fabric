@@ -1,0 +1,61 @@
+{
+  "formatVersion": "202502",
+  "computeEngineSettings": {
+    "allowModernEvaluationEngine": true
+  },
+  "name": "df_keller_file_ingestion",
+  "queryGroups": [],
+  "documentLocale": "en-US",
+  "queriesMetadata": {
+    "employee_regions": {
+      "queryId": "5503f594-0109-4af1-a460-320b2a5ceafd",
+      "queryName": "employee_regions",
+      "loadEnabled": false
+    },
+    "fixed_assets": {
+      "queryId": "e3cceb76-84f4-4309-8909-d3f68b17a445",
+      "queryName": "fixed_assets",
+      "loadEnabled": false
+    },
+    "regional_budgets": {
+      "queryId": "502164b2-f55a-4f61-b613-0e542241f21f",
+      "queryName": "regional_budgets",
+      "loadEnabled": false
+    },
+    "pLakehouseName": {
+      "queryId": "feb98d16-5b4a-4931-a74a-2fc39db03fd0",
+      "queryName": "pLakehouseName",
+      "loadEnabled": false
+    },
+    "pFilterRegion": {
+      "queryId": "4da1ca33-0891-4bfc-8af1-d19576b1402b",
+      "queryName": "pFilterRegion",
+      "loadEnabled": false
+    },
+    "pSourceTable": {
+      "queryId": "536cf143-a0eb-46f4-8848-2299ca17d451",
+      "queryName": "pSourceTable",
+      "loadEnabled": false
+    },
+    "employee_regions csv_DataDestination": {
+      "queryId": "58a68153-dfd1-443f-80e2-84df5d005155",
+      "queryName": "employee_regions csv_DataDestination",
+      "isHidden": true,
+      "loadEnabled": false
+    },
+    "DefaultDestination": {
+      "queryId": "5a5e7898-dfc0-43ed-b783-96d2f0c08018",
+      "queryName": "DefaultDestination",
+      "isHidden": true,
+      "loadEnabled": false
+    }
+  },
+  "connections": [
+    {
+      "path": "Lakehouse",
+      "kind": "Lakehouse",
+      "connectionId": "{\"ClusterId\":\"2c9bd4f4-553d-4917-83d0-aa42d0fa24be\",\"DatasourceId\":\"ea0aabdd-5987-46e6-aac4-550b2beebcae\"}"
+    }
+  ],
+  "parametric": true
+}

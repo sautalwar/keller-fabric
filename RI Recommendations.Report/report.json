@@ -1,0 +1,141 @@
+{
+  "config": "{\"version\":\"5.15\",\"themeCollection\":{\"baseTheme\":{\"name\":\"CY19SU12\",\"version\":\"5.6\",\"type\":2}},\"activeSectionIndex\":0,\"defaultDrillFilterOtherVisuals\":true,\"slowDataSourceSettings\":{\"isCrossHighlightingDisabled\":false,\"isSlicerSelectionsButtonEnabled\":false,\"isFilterSelectionsButtonEnabled\":false,\"isFieldWellButtonEnabled\":false,\"isApplyAllButtonEnabled\":false},\"linguisticSchemaSyncVersion\":2,\"settings\":{\"useStylableVisualContainerHeader\":true,\"exportDataMode\":1,\"useNewFilterPaneExperience\":true,\"allowChangeFilterTypes\":true},\"objects\":{\"section\":[{\"properties\":{\"verticalAlignment\":{\"expr\":{\"Literal\":{\"Value\":\"'Top'\"}}}}}],\"outspacePane\":[{\"properties\":{\"expanded\":{\"expr\":{\"Literal\":{\"Value\":\"false\"}}}}}]}}",
+  "layoutOptimization": 0,
+  "resourcePackages": [
+    {
+      "resourcePackage": {
+        "disabled": false,
+        "items": [
+          {
+            "name": "CY19SU12",
+            "path": "BaseThemes/CY19SU12.json",
+            "type": 202
+          }
+        ],
+        "name": "SharedResources",
+        "type": 2
+      }
+    }
+  ],
+  "sections": [
+    {
+      "config": "{\"objects\":{\"outspacePane\":[{\"properties\":{\"width\":{\"expr\":{\"Literal\":{\"Value\":\"236L\"}}}}}]}}",
+      "displayName": "Duplicate of Page 1",
+      "displayOption": 1,
+      "filters": "[{\"name\":\"Filter\",\"expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Entity\":\"RIRecommendations\"}},\"Property\":\"RI Category\"}},\"type\":\"Categorical\",\"howCreated\":1},{\"name\":\"Filter1\",\"expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Entity\":\"RIRecommendations\"}},\"Property\":\"Subscription\"}},\"type\":\"Categorical\",\"howCreated\":1}]",
+      "height": 720.00,
+      "name": "ReportSection507c7f2cf7fc0ca2e365",
+      "visualContainers": [
+        {
+          "config": "{\"name\":\"00a5e8d046de4b03c00c\",\"layouts\":[{\"id\":0,\"position\":{\"x\":0,\"y\":128.51752021563343,\"z\":6000,\"width\":160.43126684636118,\"height\":128.51752021563343}}],\"singleVisual\":{\"visualType\":\"slicer\",\"projections\":{\"Values\":[{\"queryRef\":\"Deloitte_RIRecommendations.RI Category\",\"active\":true}]},\"prototypeQuery\":{\"Version\":2,\"From\":[{\"Name\":\"d\",\"Entity\":\"RIRecommendations\",\"Type\":0}],\"Select\":[{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"RI Category\"},\"Name\":\"Deloitte_RIRecommendations.RI Category\"}]},\"drillFilterOtherVisuals\":true,\"objects\":{\"data\":[{\"properties\":{\"mode\":{\"expr\":{\"Literal\":{\"Value\":\"'Basic'\"}}}}}],\"general\":[{\"properties\":{}}],\"items\":[{\"properties\":{\"fontColor\":{\"solid\":{\"color\":{\"expr\":{\"ThemeDataColor\":{\"ColorId\":1,\"Percent\":0}}}}},\"textSize\":{\"expr\":{\"Literal\":{\"Value\":\"12D\"}}}}}]},\"vcObjects\":{\"border\":[{\"properties\":{\"show\":{\"expr\":{\"Literal\":{\"Value\":\"false\"}}}}}],\"background\":[{\"properties\":{\"color\":{\"solid\":{\"color\":{\"expr\":{\"ThemeDataColor\":{\"ColorId\":2,\"Percent\":0.6}}}}},\"transparency\":{\"expr\":{\"Literal\":{\"Value\":\"85D\"}}}}}],\"visualHeader\":[{\"properties\":{\"background\":{\"solid\":{\"color\":{\"expr\":{\"ThemeDataColor\":{\"ColorId\":0,\"Percent\":0}}}}}}}]}}}",
+          "filters": "[]",
+          "height": 128.52,
+          "width": 160.43,
+          "x": 0.00,
+          "y": 128.52,
+          "z": 6000.00
+        },
+        {
+          "config": "{\"name\":\"11ae508f80c215aa5dd8\",\"layouts\":[{\"id\":0,\"position\":{\"x\":382.1024258760108,\"y\":18.11320754716981,\"z\":11000,\"width\":145.76819407008085,\"height\":123.34231805929919}}],\"singleVisual\":{\"visualType\":\"slicer\",\"projections\":{\"Values\":[{\"queryRef\":\"RIRecommendations.Currency Code\",\"active\":true}]},\"prototypeQuery\":{\"Version\":2,\"From\":[{\"Name\":\"r\",\"Entity\":\"RIRecommendations\",\"Type\":0}],\"Select\":[{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"r\"}},\"Property\":\"Currency Code\"},\"Name\":\"RIRecommendations.Currency Code\"}]},\"drillFilterOtherVisuals\":true,\"objects\":{\"data\":[{\"properties\":{\"mode\":{\"expr\":{\"Literal\":{\"Value\":\"'Basic'\"}}}}}],\"selection\":[{\"properties\":{\"strictSingleSelect\":{\"expr\":{\"Literal\":{\"Value\":\"true\"}}}}}],\"general\":[{\"properties\":{\"filter\":{\"filter\":{\"Version\":2,\"From\":[{\"Name\":\"r\",\"Entity\":\"RIRecommendations\",\"Type\":0}],\"Where\":[{\"Condition\":{\"In\":{\"Expressions\":[{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"r\"}},\"Property\":\"Currency Code\"}}],\"Values\":[[{\"Literal\":{\"Value\":\"'USD'\"}}]]}}}]}}}}]},\"vcObjects\":{\"background\":[{\"properties\":{\"show\":{\"expr\":{\"Literal\":{\"Value\":\"true\"}}},\"color\":{\"solid\":{\"color\":{\"expr\":{\"Literal\":{\"Value\":\"'#a0d1ff'\"}}}}},\"transparency\":{\"expr\":{\"Literal\":{\"Value\":\"89D\"}}}}}]}}}",
+          "filters": "[]",
+          "height": 123.34,
+          "width": 145.77,
+          "x": 382.10,
+          "y": 18.11,
+          "z": 11000.00
+        },
+        {
+          "config": "{\"name\":\"22ad79dd416c6a0d0308\",\"layouts\":[{\"id\":0,\"position\":{\"x\":160.43126684636118,\"y\":16.388140161725065,\"z\":3000,\"width\":221.6711590296496,\"height\":127.65498652291105}}],\"singleVisual\":{\"visualType\":\"card\",\"projections\":{\"Values\":[{\"queryRef\":\"Sum(Deloitte_RIRecommendations.Estimated RI Savings)\"}]},\"prototypeQuery\":{\"Version\":2,\"From\":[{\"Name\":\"d\",\"Entity\":\"RIRecommendations\",\"Type\":0}],\"Select\":[{\"Aggregation\":{\"Expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"Estimated RI Savings\"}},\"Function\":0},\"Name\":\"Sum(Deloitte_RIRecommendations.Estimated RI Savings)\"}],\"OrderBy\":[{\"Direction\":2,\"Expression\":{\"Aggregation\":{\"Expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"Estimated RI Savings\"}},\"Function\":0}}}]},\"drillFilterOtherVisuals\":true,\"hasDefaultSort\":true,\"objects\":{\"categoryLabels\":[{\"properties\":{\"show\":{\"expr\":{\"Literal\":{\"Value\":\"false\"}}}}}],\"labels\":[{\"properties\":{\"preserveWhitespace\":{\"expr\":{\"Literal\":{\"Value\":\"false\"}}},\"fontSize\":{\"expr\":{\"Literal\":{\"Value\":\"'45'\"}}},\"color\":{\"solid\":{\"color\":{\"expr\":{\"ThemeDataColor\":{\"ColorId\":2,\"Percent\":0}}}}}}}]},\"vcObjects\":{\"title\":[{\"properties\":{\"show\":{\"expr\":{\"Literal\":{\"Value\":\"true\"}}},\"text\":{\"expr\":{\"Literal\":{\"Value\":\"'Estimated Yearly RI Savings'\"}}},\"fontSize\":{\"expr\":{\"Literal\":{\"Value\":\"'22'\"}}},\"alignment\":{\"expr\":{\"Literal\":{\"Value\":\"'center'\"}}},\"fontColor\":{\"solid\":{\"color\":{\"expr\":{\"ThemeDataColor\":{\"ColorId\":2,\"Percent\":0}}}}}}}],\"background\":[{\"properties\":{\"color\":{\"solid\":{\"color\":{\"expr\":{\"ThemeDataColor\":{\"ColorId\":2,\"Percent\":0.6}}}}},\"transparency\":{\"expr\":{\"Literal\":{\"Value\":\"89D\"}}}}}],\"border\":[{\"properties\":{\"show\":{\"expr\":{\"Literal\":{\"Value\":\"false\"}}}}}]}}}",
+          "filters": "[]",
+          "height": 127.65,
+          "width": 221.67,
+          "x": 160.43,
+          "y": 16.39,
+          "z": 3000.00
+        },
+        {
+          "config": "{\"name\":\"4b6d54a517ea18da9722\",\"layouts\":[{\"id\":0,\"position\":{\"x\":927.2237196765499,\"y\":71.59029649595686,\"z\":0,\"width\":353.6388140161725,\"height\":282.911051212938}}],\"singleVisual\":{\"visualType\":\"columnChart\",\"projections\":{\"Y\":[{\"queryRef\":\"Sum(RIRecommendations.Projected Cost (Based on RI))\"},{\"queryRef\":\"Sum(RIRecommendations.Estimated RI Savings)\"}]},\"prototypeQuery\":{\"Version\":2,\"From\":[{\"Name\":\"d\",\"Entity\":\"RIRecommendations\",\"Type\":0}],\"Select\":[{\"Aggregation\":{\"Expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"Projected Cost (Based on RI)\"}},\"Function\":0},\"Name\":\"Sum(RIRecommendations.Projected Cost (Based on RI))\"},{\"Aggregation\":{\"Expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"Estimated RI Savings\"}},\"Function\":0},\"Name\":\"Sum(RIRecommendations.Estimated RI Savings)\"}],\"OrderBy\":[{\"Direction\":2,\"Expression\":{\"Aggregation\":{\"Expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"Projected Cost (Based on RI)\"}},\"Function\":0}}}]},\"drillFilterOtherVisuals\":true,\"hasDefaultSort\":true,\"objects\":{\"labels\":[{\"properties\":{\"show\":{\"expr\":{\"Literal\":{\"Value\":\"true\"}}}}}],\"totals\":[{\"properties\":{\"show\":{\"expr\":{\"Literal\":{\"Value\":\"true\"}}}}}]},\"vcObjects\":{\"background\":[{\"properties\":{\"color\":{\"solid\":{\"color\":{\"expr\":{\"ThemeDataColor\":{\"ColorId\":2,\"Percent\":0.6}}}}},\"transparency\":{\"expr\":{\"Literal\":{\"Value\":\"84D\"}}}}}]}}}",
+          "filters": "[]",
+          "height": 282.91,
+          "width": 353.64,
+          "x": 927.22,
+          "y": 71.59,
+          "z": 0.00
+        },
+        {
+          "config": "{\"name\":\"7ca67645cd2cc0d2dc89\",\"layouts\":[{\"id\":0,\"position\":{\"x\":1104.043126684636,\"y\":0,\"z\":10000,\"width\":175.95687331536388,\"height\":71.59029649595686}}],\"singleVisual\":{\"visualType\":\"slicer\",\"projections\":{\"Values\":[{\"queryRef\":\"RIRecommendations.Enrollment\",\"active\":true}]},\"prototypeQuery\":{\"Version\":2,\"From\":[{\"Name\":\"r\",\"Entity\":\"RIRecommendations\",\"Type\":0}],\"Select\":[{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"r\"}},\"Property\":\"Enrollment\"},\"Name\":\"RIRecommendations.Enrollment\"}]},\"drillFilterOtherVisuals\":true,\"objects\":{\"data\":[{\"properties\":{\"mode\":{\"expr\":{\"Literal\":{\"Value\":\"'Basic'\"}}}}}],\"general\":[{\"properties\":{}}]}}}",
+          "filters": "[]",
+          "height": 71.59,
+          "width": 175.96,
+          "x": 1104.04,
+          "y": 0.00,
+          "z": 10000.00
+        },
+        {
+          "config": "{\"name\":\"872fd2238864ad0de936\",\"layouts\":[{\"id\":0,\"position\":{\"x\":160.43126684636118,\"y\":144.04312668463612,\"z\":2000,\"width\":368.3018867924528,\"height\":95.74123989218329}}],\"singleVisual\":{\"visualType\":\"card\",\"projections\":{\"Values\":[{\"queryRef\":\"Deloitte_RIRecommendations.Estimated RI Savings divided by Total Annual Cost\"}]},\"prototypeQuery\":{\"Version\":2,\"From\":[{\"Name\":\"d\",\"Entity\":\"RIRecommendations\",\"Type\":0}],\"Select\":[{\"Measure\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"% Savings\"},\"Name\":\"Deloitte_RIRecommendations.Estimated RI Savings divided by Total Annual Cost\"}],\"OrderBy\":[{\"Direction\":2,\"Expression\":{\"Measure\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"% Savings\"}}}]},\"drillFilterOtherVisuals\":true,\"hasDefaultSort\":true,\"objects\":{\"categoryLabels\":[{\"properties\":{\"show\":{\"expr\":{\"Literal\":{\"Value\":\"false\"}}}}}],\"labels\":[{\"properties\":{\"color\":{\"solid\":{\"color\":{\"expr\":{\"Literal\":{\"Value\":\"'#ad5129'\"}}}}},\"preserveWhitespace\":{\"expr\":{\"Literal\":{\"Value\":\"false\"}}}}}]},\"vcObjects\":{\"title\":[{\"properties\":{\"show\":{\"expr\":{\"Literal\":{\"Value\":\"true\"}}},\"text\":{\"expr\":{\"Literal\":{\"Value\":\"'% Savings'\"}}},\"fontSize\":{\"expr\":{\"Literal\":{\"Value\":\"'25'\"}}},\"alignment\":{\"expr\":{\"Literal\":{\"Value\":\"'center'\"}}},\"fontColor\":{\"solid\":{\"color\":{\"expr\":{\"Literal\":{\"Value\":\"'#ad5129'\"}}}}},\"titleWrap\":{\"expr\":{\"Literal\":{\"Value\":\"true\"}}}}}],\"background\":[{\"properties\":{\"color\":{\"solid\":{\"color\":{\"expr\":{\"ThemeDataColor\":{\"ColorId\":8,\"Percent\":0.6}}}}},\"transparency\":{\"expr\":{\"Literal\":{\"Value\":\"85D\"}}}}}],\"border\":[{\"properties\":{\"show\":{\"expr\":{\"Literal\":{\"Value\":\"false\"}}}}}]}}}",
+          "filters": "[]",
+          "height": 95.74,
+          "width": 368.30,
+          "x": 160.43,
+          "y": 144.04,
+          "z": 2000.00
+        },
+        {
+          "config": "{\"name\":\"97a2c971a3bcc2be5ea0\",\"layouts\":[{\"id\":0,\"position\":{\"x\":0,\"y\":351.91374663072776,\"z\":1000,\"width\":1280,\"height\":367.43935309973045}}],\"singleVisual\":{\"visualType\":\"tableEx\",\"projections\":{\"Values\":[{\"queryRef\":\"Deloitte_RIRecommendations.Term\"},{\"queryRef\":\"Deloitte_RIRecommendations.Enrollment\"},{\"queryRef\":\"RIRecommendations.Subscription\"},{\"queryRef\":\"Deloitte_RIRecommendations.RI Category\"},{\"queryRef\":\"Deloitte_RIRecommendations.Service Instance\"},{\"queryRef\":\"Deloitte_RIRecommendations.Breakeven point (Months)\"},{\"queryRef\":\"RIRecommendations.Period\"},{\"queryRef\":\"Sum(Deloitte_RIRecommendations.Total Annual Cost)\"},{\"queryRef\":\"Sum(Deloitte_RIRecommendations.Projected Cost (Based on RI))\"},{\"queryRef\":\"Sum(Deloitte_RIRecommendations.Estimated RI Savings)\"},{\"queryRef\":\"Deloitte_RIRecommendations.Region\"},{\"queryRef\":\"Sum(Deloitte_RIRecommendations.Recommended Quantity)\"},{\"queryRef\":\"Deloitte_RIRecommendations.Currency Code\"}]},\"prototypeQuery\":{\"Version\":2,\"From\":[{\"Name\":\"d\",\"Entity\":\"RIRecommendations\",\"Type\":0}],\"Select\":[{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"RI Category\"},\"Name\":\"Deloitte_RIRecommendations.RI Category\"},{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"Service Instance\"},\"Name\":\"Deloitte_RIRecommendations.Service Instance\"},{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"Region\"},\"Name\":\"Deloitte_RIRecommendations.Region\"},{\"Aggregation\":{\"Expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"Rec Qty\"}},\"Function\":0},\"Name\":\"Sum(Deloitte_RIRecommendations.Recommended Quantity)\"},{\"Aggregation\":{\"Expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"Projected Cost (Based on RI)\"}},\"Function\":0},\"Name\":\"Sum(Deloitte_RIRecommendations.Projected Cost (Based on RI))\"},{\"Aggregation\":{\"Expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"Estimated RI Savings\"}},\"Function\":0},\"Name\":\"Sum(Deloitte_RIRecommendations.Estimated RI Savings)\"},{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"Term\"},\"Name\":\"Deloitte_RIRecommendations.Term\"},{\"Aggregation\":{\"Expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"Total Annual Cost\"}},\"Function\":0},\"Name\":\"Sum(Deloitte_RIRecommendations.Total Annual Cost)\"},{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"Enrollment\"},\"Name\":\"Deloitte_RIRecommendations.Enrollment\"},{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"Currency Code\"},\"Name\":\"Deloitte_RIRecommendations.Currency Code\"},{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"Breakeven point (Months)\"},\"Name\":\"Deloitte_RIRecommendations.Breakeven point (Months)\"},{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"Period\"},\"Name\":\"RIRecommendations.Period\"},{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"Subscription\"},\"Name\":\"RIRecommendations.Subscription\"}],\"OrderBy\":[{\"Direction\":2,\"Expression\":{\"Aggregation\":{\"Expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"Estimated RI Savings\"}},\"Function\":0}}}]},\"drillFilterOtherVisuals\":true,\"objects\":{\"columnWidth\":[{\"properties\":{},\"selector\":{\"metadata\":\"Deloitte_RIRecommendations.Region\"}},{\"properties\":{\"value\":{\"expr\":{\"Literal\":{\"Value\":\"102.65119783665217D\"}}}},\"selector\":{\"metadata\":\"Sum(Deloitte_RIRecommendations.Projected Cost (Based on RI))\"}},{\"properties\":{\"value\":{\"expr\":{\"Literal\":{\"Value\":\"100.04651811789856D\"}}}},\"selector\":{\"metadata\":\"Sum(Deloitte_RIRecommendations.Total Annual Cost)\"}},{\"properties\":{\"value\":{\"expr\":{\"Literal\":{\"Value\":\"64.51164348295652D\"}}}},\"selector\":{\"metadata\":\"Deloitte_RIRecommendations.Currency Code\"}},{\"properties\":{\"value\":{\"expr\":{\"Literal\":{\"Value\":\"115.25582174147826D\"}}}},\"selector\":{\"metadata\":\"Sum(Deloitte_RIRecommendations.Estimated RI Savings)\"}},{\"properties\":{\"value\":{\"expr\":{\"Literal\":{\"Value\":\"186.39194016253924D\"}}}},\"selector\":{\"metadata\":\"Deloitte_RIRecommendations.Service Instance\"}},{\"properties\":{\"value\":{\"expr\":{\"Literal\":{\"Value\":\"102.2231039084538D\"}}}},\"selector\":{\"metadata\":\"Deloitte_RIRecommendations.RI Category\"}}]},\"vcObjects\":{\"title\":[{\"properties\":{\"show\":{\"expr\":{\"Literal\":{\"Value\":\"false\"}}},\"text\":{\"expr\":{\"Literal\":{\"Value\":\"'Detais'\"}}}}}]}}}",
+          "filters": "[]",
+          "height": 367.44,
+          "width": 1280.00,
+          "x": 0.00,
+          "y": 351.91,
+          "z": 1000.00
+        },
+        {
+          "config": "{\"name\":\"cae39c39dca51a48e334\",\"layouts\":[{\"id\":0,\"position\":{\"x\":527.8706199460917,\"y\":18.11320754716981,\"z\":4000,\"width\":400.2156334231806,\"height\":335.5256064690027}}],\"singleVisual\":{\"visualType\":\"clusteredColumnChart\",\"projections\":{\"Category\":[{\"queryRef\":\"Deloitte_RIRecommendations.Service Instance\",\"active\":true}],\"Y\":[{\"queryRef\":\"Sum(Deloitte_RIRecommendations.Estimated RI Savings)\"}]},\"prototypeQuery\":{\"Version\":2,\"From\":[{\"Name\":\"d\",\"Entity\":\"RIRecommendations\",\"Type\":0}],\"Select\":[{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"Service Instance\"},\"Name\":\"Deloitte_RIRecommendations.Service Instance\"},{\"Aggregation\":{\"Expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"Estimated RI Savings\"}},\"Function\":0},\"Name\":\"Sum(Deloitte_RIRecommendations.Estimated RI Savings)\"}],\"OrderBy\":[{\"Direction\":2,\"Expression\":{\"Aggregation\":{\"Expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"Estimated RI Savings\"}},\"Function\":0}}}]},\"drillFilterOtherVisuals\":true,\"hasDefaultSort\":true,\"vcObjects\":{\"title\":[{\"properties\":{\"text\":{\"expr\":{\"Literal\":{\"Value\":\"'Top 10 Savings by Service Instance'\"}}},\"alignment\":{\"expr\":{\"Literal\":{\"Value\":\"'center'\"}}},\"fontSize\":{\"expr\":{\"Literal\":{\"Value\":\"'25'\"}}},\"fontColor\":{\"solid\":{\"color\":{\"expr\":{\"ThemeDataColor\":{\"ColorId\":1,\"Percent\":0}}}}}}}],\"background\":[{\"properties\":{\"color\":{\"solid\":{\"color\":{\"expr\":{\"ThemeDataColor\":{\"ColorId\":8,\"Percent\":0.6}}}}},\"transparency\":{\"expr\":{\"Literal\":{\"Value\":\"82D\"}}}}}]}}}",
+          "filters": "[{\"expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Entity\":\"RIRecommendations\"}},\"Property\":\"Service Instance\"}},\"filter\":{\"Version\":2,\"From\":[{\"Name\":\"subquery\",\"Expression\":{\"Subquery\":{\"Query\":{\"Version\":2,\"From\":[{\"Name\":\"d\",\"Entity\":\"RIRecommendations\",\"Type\":0}],\"Select\":[{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"Service Instance\"},\"Name\":\"field\"}],\"OrderBy\":[{\"Direction\":2,\"Expression\":{\"Aggregation\":{\"Expression\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"Estimated RI Savings\"}},\"Function\":0}}}],\"Top\":10}}},\"Type\":2},{\"Name\":\"d\",\"Entity\":\"RIRecommendations\",\"Type\":0}],\"Where\":[{\"Condition\":{\"In\":{\"Expressions\":[{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"Service Instance\"}}],\"Table\":{\"SourceRef\":{\"Source\":\"subquery\"}}}}}]},\"type\":\"TopN\",\"howCreated\":0,\"isHiddenInViewMode\":false}]",
+          "height": 335.53,
+          "width": 400.22,
+          "x": 527.87,
+          "y": 18.11,
+          "z": 4000.00
+        },
+        {
+          "config": "{\"name\":\"cde54b232fb7ba5d8ef8\",\"layouts\":[{\"id\":0,\"position\":{\"x\":160.43126684636118,\"y\":240.64690026954176,\"z\":8000,\"width\":368.3018867924528,\"height\":112.12938005390835}}],\"singleVisual\":{\"visualType\":\"slicer\",\"projections\":{\"Values\":[{\"queryRef\":\"Deloitte_RIRecommendations.Breakeven point (Months)\",\"active\":true}]},\"prototypeQuery\":{\"Version\":2,\"From\":[{\"Name\":\"d\",\"Entity\":\"RIRecommendations\",\"Type\":0}],\"Select\":[{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"Breakeven point (Months)\"},\"Name\":\"Deloitte_RIRecommendations.Breakeven point (Months)\"}]},\"drillFilterOtherVisuals\":true,\"objects\":{\"data\":[{\"properties\":{\"numericStart\":{\"expr\":{\"Literal\":{\"Value\":\"0D\"}}},\"mode\":{\"expr\":{\"Literal\":{\"Value\":\"'Between'\"}}}}}],\"general\":[{\"properties\":{\"filter\":{\"filter\":{\"Version\":2,\"From\":[{\"Name\":\"d\",\"Entity\":\"RIRecommendations\",\"Type\":0}],\"Where\":[{\"Condition\":{\"Comparison\":{\"ComparisonKind\":2,\"Left\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"Breakeven point (Months)\"}},\"Right\":{\"Literal\":{\"Value\":\"0D\"}}}}}]}}}}]},\"vcObjects\":{\"title\":[{\"properties\":{\"show\":{\"expr\":{\"Literal\":{\"Value\":\"true\"}}}}}],\"background\":[{\"properties\":{\"color\":{\"solid\":{\"color\":{\"expr\":{\"ThemeDataColor\":{\"ColorId\":2,\"Percent\":0.6}}}}},\"transparency\":{\"expr\":{\"Literal\":{\"Value\":\"76D\"}}}}}],\"border\":[{\"properties\":{\"show\":{\"expr\":{\"Literal\":{\"Value\":\"false\"}}}}}]}}}",
+          "filters": "[]",
+          "height": 112.13,
+          "width": 368.30,
+          "x": 160.43,
+          "y": 240.65,
+          "z": 8000.00
+        },
+        {
+          "config": "{\"name\":\"d10ca3bf03491eacd5a0\",\"layouts\":[{\"id\":0,\"position\":{\"x\":928.0862533692722,\"y\":0,\"z\":9000,\"width\":175.95687331536388,\"height\":71.59029649595686}}],\"singleVisual\":{\"visualType\":\"slicer\",\"projections\":{\"Values\":[{\"queryRef\":\"RIRecommendations.Period\",\"active\":true}]},\"prototypeQuery\":{\"Version\":2,\"From\":[{\"Name\":\"r\",\"Entity\":\"RIRecommendations\",\"Type\":0}],\"Select\":[{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"r\"}},\"Property\":\"Period\"},\"Name\":\"RIRecommendations.Period\"}]},\"drillFilterOtherVisuals\":true,\"objects\":{\"data\":[{\"properties\":{\"mode\":{\"expr\":{\"Literal\":{\"Value\":\"'Basic'\"}}}}}],\"general\":[{\"properties\":{\"filter\":{\"filter\":{\"Version\":2,\"From\":[{\"Name\":\"r\",\"Entity\":\"RIRecommendations\",\"Type\":0}],\"Where\":[{\"Condition\":{\"In\":{\"Expressions\":[{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"r\"}},\"Property\":\"Period\"}}],\"Values\":[[{\"Literal\":{\"Value\":\"'60'\"}}]]}}}]}}}}],\"selection\":[{\"properties\":{\"strictSingleSelect\":{\"expr\":{\"Literal\":{\"Value\":\"true\"}}}}}],\"header\":[{\"properties\":{\"show\":{\"expr\":{\"Literal\":{\"Value\":\"false\"}}}}}]},\"vcObjects\":{\"title\":[{\"properties\":{\"show\":{\"expr\":{\"Literal\":{\"Value\":\"true\"}}},\"text\":{\"expr\":{\"Literal\":{\"Value\":\"'Lookback Period'\"}}},\"fontSize\":{\"expr\":{\"Literal\":{\"Value\":\"12D\"}}}}}],\"visualHeader\":[{\"properties\":{\"show\":{\"expr\":{\"Literal\":{\"Value\":\"true\"}}}}}]}}}",
+          "filters": "[]",
+          "height": 71.59,
+          "width": 175.96,
+          "x": 928.09,
+          "y": 0.00,
+          "z": 9000.00
+        },
+        {
+          "config": "{\"name\":\"e90a1106d731c27e242a\",\"layouts\":[{\"id\":0,\"position\":{\"x\":0,\"y\":16,\"z\":5000,\"width\":160,\"height\":112}}],\"singleVisual\":{\"visualType\":\"slicer\",\"projections\":{\"Values\":[{\"queryRef\":\"Deloitte_RIRecommendations.Term\",\"active\":true}]},\"prototypeQuery\":{\"Version\":2,\"From\":[{\"Name\":\"d\",\"Entity\":\"RIRecommendations\",\"Type\":0}],\"Select\":[{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"Term\"},\"Name\":\"Deloitte_RIRecommendations.Term\"}]},\"drillFilterOtherVisuals\":true,\"objects\":{\"data\":[{\"properties\":{\"mode\":{\"expr\":{\"Literal\":{\"Value\":\"'Basic'\"}}}}}],\"general\":[{\"properties\":{\"filter\":{\"filter\":{\"Version\":2,\"From\":[{\"Name\":\"r\",\"Entity\":\"RIRecommendations\",\"Type\":0}],\"Where\":[{\"Condition\":{\"In\":{\"Expressions\":[{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"r\"}},\"Property\":\"Term\"}}],\"Values\":[[{\"Literal\":{\"Value\":\"'P3Y'\"}}]]}}}]}}}}],\"items\":[{\"properties\":{\"textSize\":{\"expr\":{\"Literal\":{\"Value\":\"15D\"}}}}}],\"selection\":[{\"properties\":{\"strictSingleSelect\":{\"expr\":{\"Literal\":{\"Value\":\"true\"}}}}}]},\"vcObjects\":{\"border\":[{\"properties\":{\"show\":{\"expr\":{\"Literal\":{\"Value\":\"false\"}}}}}],\"background\":[{\"properties\":{\"color\":{\"solid\":{\"color\":{\"expr\":{\"ThemeDataColor\":{\"ColorId\":8,\"Percent\":0.6}}}}},\"transparency\":{\"expr\":{\"Literal\":{\"Value\":\"77D\"}}}}}]}}}",
+          "filters": "[]",
+          "height": 112.00,
+          "width": 160.00,
+          "x": 0.00,
+          "y": 16.00,
+          "z": 5000.00
+        },
+        {
+          "config": "{\"name\":\"f503cd8b358ebb448149\",\"layouts\":[{\"id\":0,\"position\":{\"x\":0,\"y\":256.1725067385445,\"z\":7000,\"width\":160.43126684636118,\"height\":95.74123989218329}}],\"singleVisual\":{\"visualType\":\"slicer\",\"projections\":{\"Values\":[{\"queryRef\":\"Deloitte_RIRecommendations.Scope\",\"active\":true},{\"queryRef\":\"RIRecommendations.Subscription\"}]},\"prototypeQuery\":{\"Version\":2,\"From\":[{\"Name\":\"d\",\"Entity\":\"RIRecommendations\",\"Type\":0}],\"Select\":[{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"Scope\"},\"Name\":\"Deloitte_RIRecommendations.Scope\"},{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"d\"}},\"Property\":\"Subscription\"},\"Name\":\"RIRecommendations.Subscription\"}]},\"expansionStates\":[{\"roles\":[\"Values\"],\"levels\":[{\"queryRefs\":[\"Deloitte_RIRecommendations.Scope\"],\"isCollapsed\":true,\"identityKeys\":[{\"Column\":{\"Expression\":{\"SourceRef\":{\"Entity\":\"RIRecommendations\"}},\"Property\":\"Scope\"}}],\"isPinned\":true},{\"queryRefs\":[\"RIRecommendations.Subscription\"],\"isCollapsed\":true,\"isPinned\":true}],\"root\":{\"identityValues\":null}}],\"drillFilterOtherVisuals\":true,\"objects\":{\"data\":[{\"properties\":{\"mode\":{\"expr\":{\"Literal\":{\"Value\":\"'Basic'\"}}}}}],\"general\":[{\"properties\":{\"filter\":{\"filter\":{\"Version\":2,\"From\":[{\"Name\":\"r\",\"Entity\":\"RIRecommendations\",\"Type\":0}],\"Where\":[{\"Condition\":{\"In\":{\"Expressions\":[{\"Column\":{\"Expression\":{\"SourceRef\":{\"Source\":\"r\"}},\"Property\":\"Scope\"}}],\"Values\":[[{\"Literal\":{\"Value\":\"'Shared'\"}}]]}}}]}}}}],\"items\":[{\"properties\":{\"textSize\":{\"expr\":{\"Literal\":{\"Value\":\"15D\"}}}}}],\"selection\":[{\"properties\":{\"strictSingleSelect\":{\"expr\":{\"Literal\":{\"Value\":\"true\"}}}}}]},\"vcObjects\":{\"border\":[{\"properties\":{\"show\":{\"expr\":{\"Literal\":{\"Value\":\"false\"}}},\"radius\":{\"expr\":{\"Literal\":{\"Value\":\"1D\"}}}}}],\"background\":[{\"properties\":{\"color\":{\"solid\":{\"color\":{\"expr\":{\"ThemeDataColor\":{\"ColorId\":8,\"Percent\":0.6}}}}},\"transparency\":{\"expr\":{\"Literal\":{\"Value\":\"85D\"}}}}}]},\"cachedFilterDisplayItems\":[{\"id\":{\"scopeId\":{\"Comparison\":{\"ComparisonKind\":0,\"Left\":{\"Column\":{\"Expression\":{\"SourceRef\":{\"Entity\":\"RIRecommendations\"}},\"Property\":\"Scope\"}},\"Right\":{\"Literal\":{\"Value\":\"'Shared'\"}}}}},\"displayName\":\"Shared\"}]}}",
+          "filters": "[]",
+          "height": 95.74,
+          "width": 160.43,
+          "x": 0.00,
+          "y": 256.17,
+          "z": 7000.00
+        }
+      ],
+      "width": 1280.00
+    }
+  ]
+}

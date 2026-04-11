@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "RI Recommendations"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "4d75fe16-6fe1-962a-4906-90be46964fa1"
+  }
+}

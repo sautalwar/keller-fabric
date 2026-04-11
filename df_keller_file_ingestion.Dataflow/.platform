@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "Dataflow",
+    "displayName": "df_keller_file_ingestion"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "0f79fb1a-fd9a-a7ea-4f75-cf098fc7c04d"
+  }
+}

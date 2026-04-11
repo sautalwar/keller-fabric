@@ -1,0 +1,457 @@
+table RIRecommendations
+	lineageTag: 10975bcb-9ccd-4d34-938d-13b6bed8ecd2
+
+	measure '% Savings' =
+			
+			DIVIDE(
+				SUM('RIRecommendations'[Estimated RI Savings]),
+				SUM('RIRecommendations'[Total Annual Cost])
+			)
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: cfc55fac-d3f4-4830-af8d-d78668cfcd78
+
+		extendedProperty MeasureTemplate =
+				{
+				  "version": 0,
+				  "daxTemplateName": "MathematicalDivision"
+				}
+
+		annotation Format = <Format Format="Percentage" Accuracy="2" />
+
+	measure Measure
+		lineageTag: af6365b7-adb0-4773-a7c6-5408b5e80e6f
+
+		annotation 43dbc3e8-3a1c-4b6f-9923-b49ff7d6691c = True
+
+	column Key
+		dataType: string
+		lineageTag: 0aebfc2d-a2ae-4773-b2b0-bea61d1202c6
+		summarizeBy: none
+		sourceColumn: Key
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation Format = <Format Format="Text" />
+
+		annotation DataTypeAtRefresh = String#####not a type
+
+		annotation PBI_NameAtRefresh = Key
+
+		annotation PBI_WasHiddenAtRefresh = False
+
+	column Enrollment
+		dataType: string
+		lineageTag: 1141f83c-7ef6-46cb-a650-e5e80f69e0de
+		summarizeBy: none
+		sourceColumn: Enrollment
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation Format = <Format Format="Text" />
+
+		annotation DataTypeAtRefresh = String#####not a type
+
+		annotation PBI_NameAtRefresh = Enrollment
+
+		annotation PBI_WasHiddenAtRefresh = False
+
+	column Subscription
+		dataType: string
+		lineageTag: 372f2144-f5dc-4b0c-b22a-25b4f2377afc
+		summarizeBy: none
+		sourceColumn: Subscription
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation Format = <Format Format="Text" />
+
+		annotation DataTypeAtRefresh = String#####not a type
+
+		annotation PBI_NameAtRefresh = Subscription
+
+		annotation PBI_WasHiddenAtRefresh = False
+
+	column 'Resource Id'
+		dataType: string
+		lineageTag: 7323a84f-b972-4a43-9c7e-a0903e8974de
+		summarizeBy: none
+		sourceColumn: Resource Id
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation Format = <Format Format="Text" />
+
+		annotation DataTypeAtRefresh = String#####not a type
+
+		annotation PBI_NameAtRefresh = Resource Id
+
+		annotation PBI_WasHiddenAtRefresh = False
+
+	column 'RI Category'
+		dataType: string
+		lineageTag: 6026354d-6220-4fda-b026-de55767a34c5
+		summarizeBy: none
+		sourceColumn: RI Category
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation Format = <Format Format="Text" />
+
+		annotation DataTypeAtRefresh = String#####not a type
+
+		annotation PBI_NameAtRefresh = RI Category
+
+		annotation PBI_WasHiddenAtRefresh = False
+
+	column 'Service Instance'
+		dataType: string
+		lineageTag: a52fb1bf-8a47-430b-b288-15e61cadfba3
+		summarizeBy: none
+		sourceColumn: Service Instance
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation Format = <Format Format="Text" />
+
+		annotation DataTypeAtRefresh = String#####not a type
+
+		annotation PBI_NameAtRefresh = Service Instance
+
+		annotation PBI_WasHiddenAtRefresh = False
+
+	column Region
+		dataType: string
+		lineageTag: ae66055b-1a4e-407d-b5c4-ea389d2a9cf1
+		summarizeBy: none
+		sourceColumn: Region
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation Format = <Format Format="Text" />
+
+		annotation DataTypeAtRefresh = String#####not a type
+
+		annotation PBI_NameAtRefresh = Region
+
+		annotation PBI_WasHiddenAtRefresh = False
+
+	column 'Rec Qty'
+		dataType: int64
+		formatString: 0
+		lineageTag: 4c1108fd-8f2b-4451-8511-e8aa1055cae5
+		summarizeBy: sum
+		sourceColumn: Rec Qty
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation Format = <Format Format="NumberWhole" Accuracy="0" />
+
+		annotation DataTypeAtRefresh = Int64#####not a type
+
+		annotation PBI_NameAtRefresh = Rec Qty
+
+		annotation PBI_WasHiddenAtRefresh = False
+
+	column 'Upfront Reservation Payment'
+		dataType: double
+		lineageTag: 9894f80f-d354-4564-bea8-8ea8b60cac62
+		summarizeBy: sum
+		sourceColumn: Upfront Reservation Payment
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation Format = <Format Format="General" />
+
+		annotation DataTypeAtRefresh = Double#####not a type
+
+		annotation PBI_NameAtRefresh = Upfront Reservation Payment
+
+		annotation PBI_WasHiddenAtRefresh = False
+
+	column 'Current Windows VM Annual Cost'
+		dataType: double
+		lineageTag: b69ba256-031b-4451-b766-6f96fde6412b
+		summarizeBy: sum
+		sourceColumn: Current Windows VM Annual Cost
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation Format = <Format Format="General" />
+
+		annotation DataTypeAtRefresh = Double#####not a type
+
+		annotation PBI_NameAtRefresh = Current Windows VM Annual Cost
+
+		annotation PBI_WasHiddenAtRefresh = False
+
+	column 'Current Windows VM Annual Units'
+		dataType: double
+		lineageTag: 75d500d7-b6d2-439a-842f-552d63006f10
+		summarizeBy: sum
+		sourceColumn: Current Windows VM Annual Units
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation Format = <Format Format="General" />
+
+		annotation DataTypeAtRefresh = Double#####not a type
+
+		annotation PBI_NameAtRefresh = Current Windows VM Annual Units
+
+		annotation PBI_WasHiddenAtRefresh = False
+
+	column 'Current Windows VM Hourly Rate'
+		dataType: double
+		lineageTag: 077d7e22-4c94-401c-96a0-a8c70a792a1c
+		summarizeBy: sum
+		sourceColumn: Current Windows VM Hourly Rate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation Format = <Format Format="General" />
+
+		annotation DataTypeAtRefresh = Double#####not a type
+
+		annotation PBI_NameAtRefresh = Current Windows VM Hourly Rate
+
+		annotation PBI_WasHiddenAtRefresh = False
+
+	column 'Current Annual Cost'
+		dataType: double
+		lineageTag: 87f4545f-e551-4021-96ff-99cec182d0bc
+		summarizeBy: sum
+		sourceColumn: Current Annual Cost
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation Format = <Format Format="General" />
+
+		annotation DataTypeAtRefresh = Double#####not a type
+
+		annotation PBI_NameAtRefresh = Current Annual Cost
+
+		annotation PBI_WasHiddenAtRefresh = False
+
+	column 'Current Annual Units'
+		dataType: double
+		lineageTag: 6f4485d4-4a62-4c31-bfdd-9aceaddc3db2
+		summarizeBy: sum
+		sourceColumn: Current Annual Units
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation Format = <Format Format="General" />
+
+		annotation DataTypeAtRefresh = Double#####not a type
+
+		annotation PBI_NameAtRefresh = Current Annual Units
+
+		annotation PBI_WasHiddenAtRefresh = False
+
+	column 'Current Hourly Rate'
+		dataType: double
+		lineageTag: 784e59a3-cfef-440e-a06f-5767d60cf85c
+		summarizeBy: sum
+		sourceColumn: Current Hourly Rate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation Format = <Format Format="General" />
+
+		annotation DataTypeAtRefresh = Double#####not a type
+
+		annotation PBI_NameAtRefresh = Current Hourly Rate
+
+		annotation PBI_WasHiddenAtRefresh = False
+
+	column 'Total Annual Cost'
+		dataType: double
+		lineageTag: e0dcf56a-44b9-4385-aecd-3c9803ebdb5c
+		summarizeBy: sum
+		sourceColumn: Total Annual Cost
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation Format = <Format Format="General" />
+
+		annotation DataTypeAtRefresh = Double#####not a type
+
+		annotation PBI_NameAtRefresh = Total Annual Cost
+
+		annotation PBI_WasHiddenAtRefresh = False
+
+	column 'Projected Cost (Based on RI)'
+		dataType: double
+		lineageTag: 712faa46-be58-4504-bdb9-6ee4e914ec39
+		summarizeBy: sum
+		sourceColumn: Projected Cost (Based on RI)
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation Format = <Format Format="General" />
+
+		annotation DataTypeAtRefresh = Double#####not a type
+
+		annotation PBI_NameAtRefresh = Projected Cost (Based on RI)
+
+		annotation PBI_WasHiddenAtRefresh = False
+
+	column 'PAYG Overage Cost'
+		dataType: double
+		lineageTag: aaa2c040-ad35-4a03-8619-3c18e650e264
+		summarizeBy: sum
+		sourceColumn: PAYG Overage Cost
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation Format = <Format Format="General" />
+
+		annotation DataTypeAtRefresh = Double#####not a type
+
+		annotation PBI_NameAtRefresh = PAYG Overage Cost
+
+		annotation PBI_WasHiddenAtRefresh = False
+
+	column 'Estimated RI Savings'
+		dataType: double
+		formatString: 0.00
+		lineageTag: 826883a3-4635-47d2-a6c6-217bcee791e1
+		summarizeBy: sum
+		sourceColumn: Estimated RI Savings
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation Format = <Format Format="NumberDecimal" Accuracy="2" />
+
+		annotation DataTypeAtRefresh = Double#####not a type
+
+		annotation PBI_NameAtRefresh = Estimated RI Savings
+
+		annotation PBI_WasHiddenAtRefresh = False
+
+	column 'Estimated RI Savings %'
+		dataType: string
+		lineageTag: 13e6e79b-d1ca-4fe5-9348-21892e1b7f3e
+		summarizeBy: none
+		sourceColumn: Estimated RI Savings %
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation Format = <Format Format="Text" />
+
+		annotation DataTypeAtRefresh = String#####not a type
+
+		annotation PBI_NameAtRefresh = Estimated RI Savings %
+
+		annotation PBI_WasHiddenAtRefresh = False
+
+	column Term
+		dataType: string
+		lineageTag: b86ba8e0-abbb-473b-a7f5-452474ffecbd
+		summarizeBy: none
+		sourceColumn: Term
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation Format = <Format Format="Text" />
+
+		annotation DataTypeAtRefresh = String#####not a type
+
+		annotation PBI_NameAtRefresh = Term
+
+		annotation PBI_WasHiddenAtRefresh = False
+
+	column Period
+		dataType: string
+		lineageTag: 8362d60a-248c-49c5-8962-76fd4876ca85
+		summarizeBy: none
+		sourceColumn: Period
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation Format = <Format Format="Text" />
+
+		annotation DataTypeAtRefresh = String#####not a type
+
+		annotation PBI_NameAtRefresh = Period
+
+		annotation PBI_WasHiddenAtRefresh = False
+
+	column Scope
+		dataType: string
+		lineageTag: 69eebd4a-4bcd-4c1f-b81b-bc4fbaebd92f
+		summarizeBy: none
+		sourceColumn: Scope
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation Format = <Format Format="Text" />
+
+		annotation DataTypeAtRefresh = String#####not a type
+
+		annotation PBI_NameAtRefresh = Scope
+
+		annotation PBI_WasHiddenAtRefresh = False
+
+	column 'Currency Code'
+		dataType: string
+		lineageTag: eac5d39b-3113-4b69-b946-95ae494ba62d
+		summarizeBy: none
+		sourceColumn: Currency Code
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation Format = <Format Format="Text" />
+
+		annotation DataTypeAtRefresh = String#####not a type
+
+		annotation PBI_NameAtRefresh = Currency Code
+
+		annotation PBI_WasHiddenAtRefresh = False
+
+	column 'Breakeven point (Months)'
+		dataType: int64
+		formatString: 0
+		lineageTag: ce67bd09-50a1-4f4f-9568-59cbb59b6a01
+		summarizeBy: sum
+		sourceColumn: Breakeven point (Months)
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation Format = <Format Format="NumberDecimal" Accuracy="0" />
+
+		annotation DataTypeAtRefresh = Int64#####not a type
+
+		annotation PBI_NameAtRefresh = Breakeven point (Months)
+
+		annotation PBI_WasHiddenAtRefresh = False
+
+	partition RIRecommendations-ee87701e-e9d3-4071-8aad-44428ae5a9ea = m
+		mode: import
+		source =
+				let
+				    Source = Csv.Document(File.Contents("C:\Azure\RIRecommendations.csv"),[Delimiter=",", Columns=24, Encoding=1252, QuoteStyle=QuoteStyle.None]),
+				    #"Promoted Headers" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]),
+				    #"Renamed Columns" = Table.RenameColumns(#"Promoted Headers",{{"Reservation Recommendations", "Rec Qty"}}),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Renamed Columns",{{"Projected Cost (Based on RI)", type number}, {"Total Annual Cost", type number}, {"Current Hourly Rate", type number}, {"Current Annual Units", type number}, {"Current Annual Cost", type number}, {"Current Windows VM Hourly Rate", type number}, {"Current Windows VM Annual Units", type number}, {"Current Windows VM Annual Cost", type number}, {"Upfront Reservation Payment", type number}, {"Rec Qty", Int64.Type}, {"Estimated RI Savings", type number}, {"PAYG Overage Cost", type number}}),
+				    #"Changed Type1" = Table.TransformColumnTypes(#"Changed Type",{{"Enrollment", type text}}),
+				    #"Filtered Rows" = Table.SelectRows(#"Changed Type1", each [Estimated RI Savings] <> 0),
+				    #"Added Conditional Column" = Table.AddColumn(#"Filtered Rows", "Custom", each if [Term] = "P1Y" then [#"Projected Cost (Based on RI)"]*12/[Total Annual Cost] else [#"Projected Cost (Based on RI)"] *12*3/[Total Annual Cost]),
+				    #"Changed Type2" = Table.TransformColumnTypes(#"Added Conditional Column",{{"Custom", type number}}),
+				    #"Renamed Columns1" = Table.RenameColumns(#"Changed Type2",{{"Custom", "Breakeven Point (Months)"}}),
+				    #"Added Conditional Column1" = Table.AddColumn(#"Renamed Columns1", "Custom", each if [Term] = "P1Y" then "[#""Projected Cost (Based on RI)""]*12/[Total Annual Cost]" else "[#""Projected Cost (Based on RI)""]*12*3/[Total Annual Cost]"),
+				    #"Removed Columns1" = Table.RemoveColumns(#"Added Conditional Column1",{"Custom"}),
+				    #"Added Conditional Column2" = Table.AddColumn(#"Removed Columns1", "Custom", each if [Term] = "P1Y" then [#"Projected Cost (Based on RI)"]*12/[Total Annual Cost] else [#"Projected Cost (Based on RI)"]*3*12/[Total Annual Cost]),
+				    #"Changed Type3" = Table.TransformColumnTypes(#"Added Conditional Column2",{{"Custom", Int64.Type}}),
+				    #"Removed Columns2" = Table.RemoveColumns(#"Changed Type3",{"Breakeven Point (Months)"}),
+				    #"Renamed Columns2" = Table.RenameColumns(#"Removed Columns2",{{"Custom", "Breakeven point (Months)"}}),
+				    #"Filtered Rows1" = Table.SelectRows(#"Renamed Columns2", each ([RI Category] <> "SqlAzureHybridBenefit"))
+				in
+				    #"Filtered Rows1"
+
+	annotation PBI_QueryRelationships = {"columnCount":25,"keyColumnNames":[],"queryRelationships":[],"columnIdentities":["Section1/RIRecommendations/Changed Type.{Key,0}","Section1/RIRecommendations/Changed Type1.{Enrollment,1}","Section1/RIRecommendations/Changed Type.{Subscription,2}","Section1/RIRecommendations/Changed Type.{Resource Id,3}","Section1/RIRecommendations/Changed Type.{RI Category,4}","Section1/RIRecommendations/Changed Type.{Service Instance,5}","Section1/RIRecommendations/Changed Type.{Region,6}","Section1/RIRecommendations/Changed Type.{Reservation Recommendations,7}","Section1/RIRecommendations/Changed Type.{Upfront Reservation Payment,8}","Section1/RIRecommendations/Changed Type.{Current Windows VM Annual Cost,9}","Section1/RIRecommendations/Changed Type.{Current Windows VM Annual Units,10}","Section1/RIRecommendations/Changed Type.{Current Windows VM Hourly Rate,11}","Section1/RIRecommendations/Changed Type.{Current Annual Cost,12}","Section1/RIRecommendations/Changed Type.{Current Annual Units,13}","Section1/RIRecommendations/Changed Type.{Current Hourly Rate,14}","Section1/RIRecommendations/Changed Type.{Total Annual Cost,15}","Section1/RIRecommendations/Changed Type.{Projected Cost (Based on RI),16}","Section1/RIRecommendations/Changed Type.{PAYG Overage Cost,17}","Section1/RIRecommendations/Changed Type.{Estimated RI Savings,18}","Section1/RIRecommendations/Changed Type.{Estimated RI Savings %,19}","Section1/RIRecommendations/Changed Type.{Term,20}","Section1/RIRecommendations/Changed Type.{Period,21}","Section1/RIRecommendations/Changed Type.{Scope,22}","Section1/RIRecommendations/Changed Type.{Currency Code,23}","Section1/RIRecommendations/Changed Type4.{Breakeven point (Months),24}"],"ColumnCount":25,"KeyColumnNames":[],"ColumnIdentities":["Section1/RIRecommendations/Changed Type.{Key,0}","Section1/RIRecommendations/Changed Type1.{Enrollment,1}","Section1/RIRecommendations/Changed Type.{Subscription,2}","Section1/RIRecommendations/Changed Type.{Resource Id,3}","Section1/RIRecommendations/Changed Type.{RI Category,4}","Section1/RIRecommendations/Changed Type.{Service Instance,5}","Section1/RIRecommendations/Changed Type.{Region,6}","Section1/RIRecommendations/Changed Type.{Reservation Recommendations,7}","Section1/RIRecommendations/Changed Type.{Upfront Reservation Payment,8}","Section1/RIRecommendations/Changed Type.{Current Windows VM Annual Cost,9}","Section1/RIRecommendations/Changed Type.{Current Windows VM Annual Units,10}","Section1/RIRecommendations/Changed Type.{Current Windows VM Hourly Rate,11}","Section1/RIRecommendations/Changed Type.{Current Annual Cost,12}","Section1/RIRecommendations/Changed Type.{Current Annual Units,13}","Section1/RIRecommendations/Changed Type.{Current Hourly Rate,14}","Section1/RIRecommendations/Changed Type.{Total Annual Cost,15}","Section1/RIRecommendations/Changed Type.{Projected Cost (Based on RI),16}","Section1/RIRecommendations/Changed Type.{PAYG Overage Cost,17}","Section1/RIRecommendations/Changed Type.{Estimated RI Savings,18}","Section1/RIRecommendations/Changed Type.{Estimated RI Savings %,19}","Section1/RIRecommendations/Changed Type.{Term,20}","Section1/RIRecommendations/Changed Type.{Period,21}","Section1/RIRecommendations/Changed Type.{Scope,22}","Section1/RIRecommendations/Changed Type.{Currency Code,23}","Section1/RIRecommendations/Changed Type4.{Breakeven point (Months),24}"],"RelationshipInfo":[]}
+
+	annotation PBI_ResultType = Table
+
+	annotation PBI_DescriptionAtRefresh
+
